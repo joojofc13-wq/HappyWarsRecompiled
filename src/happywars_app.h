@@ -31,6 +31,15 @@ class HappyWarsApp : public rex::ReXApp {
   }
   void OnConfigurePaths(rex::PathConfig& paths) override {
     auto folder = rex::filesystem::GetExecutableFolder();
+    if (std::filesystem::is_regular_file(folder / "game/Default.xex") &&
+        std::filesystem::is_directory(folder / "game/media")) {
+      if (paths.game_data_root.empty()) paths.game_data_root = folder / "game";
+      if (rex::cvar::GetFlagByName("user_data_root").empty()) paths.user_data_root = folder / "saves";
+      if (rex::cvar::GetFlagByName("cache_root").empty()) paths.cache_root = folder / "cache";
+      rex::cvar::SetFlagByName("mnk_mode", "true");
+      return;
+    }
+
     for (unsigned depth = 0; depth < 4; ++depth, folder = folder.parent_path()) {
       if (!std::filesystem::is_regular_file(folder / "happywars_manifest.toml")) continue;
       if (paths.game_data_root.empty()) paths.game_data_root = folder / "private/game";

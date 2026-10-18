@@ -20,7 +20,7 @@ them first. Downloads are pinned in `config/upstream-lock.json`; executable-tool
 archives and the SDK are checked against recorded hashes. The Microsoft installer
 is used to extract headers and libraries locally, not to install Visual Studio.
 
-Tools stay under the output's `tools` directory. A short temporary directory is
+Sources and tools stay in a separate Windows temporary build workspace. A short temporary directory is
 used during Microsoft SDK extraction to avoid Windows Installer path limits.
 No system PATH change is made. Game files and updates are never downloaded.
 
@@ -33,10 +33,10 @@ No system PATH change is made. Game files and updates are never downloaded.
 
 The original input is unchanged. Nonempty output folders are rejected. Failed
 builds retain their files and logs for diagnosis; use a new empty output for
-another attempt. The main log is `logs/builder.log`.
+another attempt. The workspace path is shown during setup; its main log is `logs/builder.log`.
 
-The result is `build/game/HappyWars.exe`, runtime libraries and the save-reset
-helper. Playing does not require LLVM or Python installed separately.
+The output contains `HappyWars.exe`, runtime DLLs, the owned files in `game/`,
+and the save-reset helper. It contains no source tree, compiler or object files. Playing does not require LLVM or Python installed separately.
 
 The FPS counter uses an optional compatible original Scaleform font. TU46 uses
 different font resources, so a build without that optional base-game font keeps
@@ -45,7 +45,8 @@ the FPS overlay disabled. Maintainers can supply their owned font through
 
 ## Saves
 
-Saves use `private/smoke-user/title-storage.sqlite`. Backups and SQLite journal
+Exported games use `saves/title-storage.sqlite` beside the executable.
+Development workspaces use `private/smoke-user/title-storage.sqlite`. Backups and SQLite journal
 files stay in that profile directory. Close the game and use **ResetSaves.cmd** to reset this
 port's saves after typing **RESET**. Game files, shader caches, tool downloads,
 settings and unrelated games are preserved. The next launch starts a new save.

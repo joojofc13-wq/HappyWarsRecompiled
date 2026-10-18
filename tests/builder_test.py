@@ -25,6 +25,19 @@ class BuilderTests(unittest.TestCase):
             self.assertIn('[1/2] Compile',console.getvalue())
             self.assertIn('[2/2] Link',console.getvalue())
             self.assertIn('compiler details',(root/'logs/native.log').read_text())
+    def test_export_contains_runtime_and_game_only(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp); port=root/'work'; native=port/'build/game'; native.mkdir(parents=True)
+            for name in ('HappyWars.exe','rexruntime.dll','rexgpu-xenos.dll','CMakeCache.txt','test.exe','game.lib'):
+                (native/name).write_bytes(b'test')
+            game=port/'private/game'; (game/'media').mkdir(parents=True)
+            (game/'Default.xex').write_bytes(b'owned')
+            target=root/'output'
+            self.assertEqual(builder.stage_runtime(port,target),target/'HappyWars.exe')
+            self.assertEqual({p.name for p in target.iterdir()},
+                {'HappyWars.exe','rexruntime.dll','rexgpu-xenos.dll','game'})
+            self.assertEqual((target/'game/Default.xex').read_bytes(),b'owned')
+            with self.assertRaises(ValueError): builder.stage_runtime(port,target)
     def test_existing_destination_is_preserved(self):
         with tempfile.TemporaryDirectory() as temp:
             folder=Path(temp); original=folder/'keep.txt'; original.write_text('keep')

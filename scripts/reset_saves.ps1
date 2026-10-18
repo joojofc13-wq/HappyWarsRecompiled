@@ -1,13 +1,16 @@
 param([switch]$Yes)
 $ErrorActionPreference = 'Stop'
 $scriptFolder = Split-Path -Parent $MyInvocation.MyCommand.Path
-if ((Split-Path -Leaf $scriptFolder) -eq 'scripts') {
+$portable = Test-Path -LiteralPath (Join-Path $scriptFolder 'game/Default.xex')
+if ($portable) {
+    $portRoot = $scriptFolder
+} elseif ((Split-Path -Leaf $scriptFolder) -eq 'scripts') {
     $portRoot = Split-Path -Parent $scriptFolder
 } elseif ((Split-Path -Leaf $scriptFolder) -eq 'game' -and (Split-Path -Leaf (Split-Path -Parent $scriptFolder)) -eq 'build') {
     $portRoot = Split-Path -Parent (Split-Path -Parent $scriptFolder)
 } else { throw 'Run this helper from scripts or build/game.' }
 $portRoot = [IO.Path]::GetFullPath($portRoot)
-if (-not (Test-Path -LiteralPath (Join-Path $portRoot 'happywars_manifest.toml'))) { throw 'Project marker missing.' }
+if (-not $portable -and -not (Test-Path -LiteralPath (Join-Path $portRoot 'happywars_manifest.toml'))) { throw 'Project marker missing.' }
 $running = Get-CimInstance Win32_Process -Filter "Name='HappyWars.exe'" | Where-Object {
     $_.ExecutablePath -and $_.ExecutablePath.StartsWith($portRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)
 }
@@ -18,7 +21,7 @@ if (-not $Yes) {
     if ((Read-Host 'Type RESET to continue') -cne 'RESET') { exit 0 }
 }
 $files = @()
-foreach ($relative in @('private/smoke-user')) {
+foreach ($relative in $(if ($portable) { @('saves') } else { @('private/smoke-user') })) {
     $directory = [IO.Path]::GetFullPath((Join-Path $portRoot $relative))
     if (-not $directory.StartsWith($portRoot + [IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)) { throw 'Unsafe profile path.' }
     if (Test-Path -LiteralPath $directory) {

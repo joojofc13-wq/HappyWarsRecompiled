@@ -20,6 +20,7 @@ def run(command, log, env):
         for line in process.stdout:
             output.write(line); output.flush()
             if re.match(r'^\[\d+/\d+\]',line): print(line.rstrip(),flush=True)
+        process.stdout.close()
         returncode=process.wait()
     if returncode:
         print((ROOT/'logs'/log).read_text(encoding='utf-8',errors='replace')[-8000:])

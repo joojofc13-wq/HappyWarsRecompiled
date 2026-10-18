@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import tempfile
 import zipfile
 from build import environment as build_environment
 
@@ -71,6 +72,24 @@ def prepare_sources(destination):
     return destination
 
 
+def stage_runtime(port, destination):
+    """Export only runtime files and owned game data, never build sources or tools."""
+    destination=Path(destination)
+    if destination.exists() and any(destination.iterdir()):
+        raise ValueError('Output folder is no longer empty; export stopped without overwriting files.')
+    destination.mkdir(parents=True,exist_ok=True)
+    native=Path(port)/'build/game'
+    for name in ('HappyWars.exe','rexruntime.dll','rexgpu-xenos.dll'):
+        if not (native/name).is_file(): raise RuntimeError('Missing runtime file: '+name)
+    for source in native.iterdir():
+        if source.is_file() and (source.suffix.lower()=='.dll' or source.name in
+                ('HappyWars.exe','ResetSaves.cmd','reset_saves.ps1')):
+            shutil.copy2(source,destination/source.name)
+    if (native/'fonts').is_dir(): shutil.copytree(native/'fonts',destination/'fonts')
+    shutil.copytree(Path(port)/'private/game',destination/'game')
+    return destination/'HappyWars.exe'
+
+
 def compile_game(game, destination, llvm='', msvc='', font='', accept_license=False, emit=print, local_settings=None, progress=None):
     def advance(percent, stage):
         if progress: progress(percent, stage)
@@ -89,7 +108,11 @@ def compile_game(game, destination, llvm='', msvc='', font='', accept_license=Fa
         raise ValueError('Accept the Microsoft build-tools license to download the required headers and SDK.')
     advance(1, 'Preparing project sources')
     emit('Preparing project sources')
-    port = prepare_sources(destination)
+    if destination.exists() and any(destination.iterdir()):
+        raise ValueError('Choose a new or empty output folder.')
+    workspace = Path(tempfile.mkdtemp(prefix='HappyWarsBuild-'))
+    emit('Build workspace and logs: '+str(workspace))
+    port = prepare_sources(workspace)
     flags = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
     if automatic:
         from bootstrap_tools import bootstrap
@@ -186,9 +209,10 @@ def compile_game(game, destination, llvm='', msvc='', font='', accept_license=Fa
             shutil.copy2(library,port/'build/game'/library.name)
     for name in ('ResetSaves.cmd', 'scripts/reset_saves.ps1'):
         shutil.copy2(port/name, port/'build/game'/Path(name).name)
+    executable = stage_runtime(port, destination)
     advance(100, 'Build complete')
-    emit('Build complete: '+str(port/'build/game/HappyWars.exe'))
-    return port/'build/game/HappyWars.exe'
+    emit('Build complete: '+str(executable))
+    return executable
 
 
 def main():
