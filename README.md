@@ -6,7 +6,9 @@
 
 An unofficial native Windows x64 port of the Xbox 360 version of Happy Wars, built through static PowerPC recompilation with ReXGlue.
 
-The goal is offline Skirmish with the original bots, maps, equipment, Happy Cards and persistent progression. You must provide files from your own copy of the game.
+The goal is offline Skirmish with the original bots, maps, equipment, Happy Cards and persistent progression (since revival crashes on campaign mode and some skirmsh maps).
+
+You must provide files from your own copy of the game.
 
 **Work in progress:** the build renders the intro and 3D title screen. Local profile and storage services are under development. The mode menu and gameplay are not working yet.
 
