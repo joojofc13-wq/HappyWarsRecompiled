@@ -63,7 +63,6 @@ Menu and short gameplay sessions have been confirmed interactively. Full match c
 - [x] Pass the original account check with a local profile.
 - [x] Load local player data and reach the mode menu in TU46.
 - [x] Enter Skirmish and play with the original bots in TU46.
-- [ ] Complete a match reliably.
 - [x] Store local player and equipment data.
 - [ ] Verify rewards, upgrades and Happy Cards across complete matches and restarts.
 - [x] Begin map and mode playtesting.
