@@ -1,5 +1,6 @@
 """Package the Windows builder with audited project sources, never game files."""
 import hashlib
+import argparse
 import json
 from pathlib import Path
 import subprocess
@@ -15,7 +16,11 @@ if __name__ == '__main__':
     required=json.loads((ROOT/'config/upstream-lock.json').read_text())['builder_packages']['pyinstaller']
     if PyInstaller.__version__ != required:
         raise SystemExit('Install the pinned PyInstaller version: '+required)
-    output = ROOT/'build/builder-release'
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output', type=Path, default=ROOT/'build/builder-release')
+    output = parser.parse_args().output.resolve()
+    if not output.is_relative_to((ROOT/'build').resolve()):
+        raise SystemExit('Release staging must remain inside build/')
     output.mkdir(parents=True, exist_ok=True)
     source = output/'source.zip'
     names = subprocess.check_output(['git','ls-files','-z'],cwd=ROOT).decode().split('\0')
