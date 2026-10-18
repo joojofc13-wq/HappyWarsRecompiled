@@ -6,9 +6,11 @@
 
 > Use your own Xbox 360 copy from **Happy Wars Revival**. This is the most up-to-date copy tested with this project: **TU46, version 0.0.46.7, Media ID 5CEC066D**. Earlier versions are not guaranteed to work. The builder verifies the executable hash before compiling.
 
-An unofficial native Windows x64 port of the Xbox 360 version of Happy Wars, built through static PowerPC recompilation with ReXGlue.
+An unofficial native Windows x64 port of the Xbox 360 version of Happy Wars, built using static PowerPC recompilation with ReXGlue.
 
-The goal is offline Skirmish with the original bots, maps, equipment, Happy Cards and persistent progression. You must provide files from your own copy of the game.
+The goal is to preserve the original campaign and offline Skirmish modes, including the original bots, maps, equipment, Happy Cards, and persistent progression.
+
+**You must provide the game files from your own copy of Happy Wars.**
 
 **Experimental:** the TU46 development port reaches Game Home, the tutorial and Skirmish gameplay. Matches remain unstable: a D3D12 GPU crash is under investigation, and the Marketplace warning persists. There is no ready-to-play public binary.
 
@@ -62,8 +64,10 @@ Menu and short gameplay sessions have been confirmed interactively. Full match c
 - [x] Load local player data and reach the mode menu in TU46.
 - [x] Enter Skirmish and play with the original bots in TU46.
 - [ ] Complete a match reliably.
-- [ ] Preserve equipment, upgrades, rewards and Happy Cards between sessions.
-- [ ] Validate available maps and modes.
+- [x] Store local player and equipment data.
+- [ ] Verify rewards, upgrades and Happy Cards across complete matches and restarts.
+- [x] Begin map and mode playtesting.
+- [ ] Complete validation of all available maps and modes.
 - [ ] Measure and improve performance.
 - [x] Provide an experimental Windows builder for owners of the supported TU46 copy.
 
