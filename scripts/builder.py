@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import queue
+import re
 import shutil
 import subprocess
 import sys
@@ -70,7 +71,10 @@ def prepare_sources(destination):
     return destination
 
 
-def compile_game(game, destination, llvm='', msvc='', font='', accept_license=False, emit=print, local_settings=None):
+def compile_game(game, destination, llvm='', msvc='', font='', accept_license=False, emit=print, local_settings=None, progress=None):
+    def advance(percent, stage):
+        if progress: progress(percent, stage)
+    advance(0, "Validating game files")
     game = validate_game(game)
     if getattr(sys,'frozen',False) and sys.platform=='win32':
         import ctypes
@@ -83,11 +87,13 @@ def compile_game(game, destination, llvm='', msvc='', font='', accept_license=Fa
     automatic = not local_settings and not llvm
     if automatic and not accept_license:
         raise ValueError('Accept the Microsoft build-tools license to download the required headers and SDK.')
+    advance(1, 'Preparing project sources')
     emit('Preparing project sources')
     port = prepare_sources(destination)
     flags = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
     if automatic:
         from bootstrap_tools import bootstrap
+        advance(2, 'Downloading portable tools')
         tools = bootstrap(port, emit)
         python = tools['python']; llvm = tools['llvm']
     else:
@@ -98,10 +104,11 @@ def compile_game(game, destination, llvm='', msvc='', font='', accept_license=Fa
                            capture_output=True, creationflags=flags)
     if check.returncode:
         raise RuntimeError('The build Python runtime could not start.')
+    advance(10, 'Copying game files')
     emit('Copying your game files; the original folder is unchanged')
     shutil.copytree(game, port/'private/game')
     log_path = port/'logs/builder.log'
-    def run(arguments):
+    def run(arguments, native_progress=False):
         emit('Running '+str(arguments[0]))
         command = python+['-u',str(port/arguments[0])]+[str(x) for x in arguments[1:]]
         environment = os.environ.copy()
@@ -113,9 +120,15 @@ def compile_game(game, destination, llvm='', msvc='', font='', accept_license=Fa
             for line in process.stdout:
                 log.write(line); log.flush()
                 recent = (recent+[line.rstrip()])[-12:]
+                if native_progress:
+                    counts = re.match(r'^\[(\d+)/(\d+)\]', line)
+                    if counts and 0 < int(counts[1]) <= int(counts[2]):
+                        advance(60 + 38 * int(counts[1]) / int(counts[2]),
+                                'Compiling game: '+counts[1]+'/'+counts[2])
                 if line.strip(): emit(line.rstrip())
             if process.wait():
                 raise RuntimeError('Build step failed. See '+str(log_path)+'\n'+'\n'.join(recent))
+    advance(15, 'Preparing Microsoft SDK and dependencies')
     if local_settings:
         (port/'config/local-tools.json').write_text(json.dumps(local_settings, indent=2), encoding='utf-8')
         fonttools = json.loads((port/'config/upstream-lock.json').read_text())['python_packages']['fonttools']
@@ -129,15 +142,19 @@ def compile_game(game, destination, llvm='', msvc='', font='', accept_license=Fa
         runtime_folder=next((Path(msvc)/'VC/Redist/MSVC').glob('*/x64/Microsoft.VC143.CRT'),None)
         if runtime_folder:
             os.environ['PATH']=str(runtime_folder)+os.pathsep+os.environ.get('PATH','')
+        advance(25, 'Preparing recompiler sources')
         run(['scripts/setup.py', '--llvm-bin', llvm, '--msvc', msvc, '--diagnostic-source'])
+        advance(30, 'Building recompiler tools')
         run(['scripts/build_diagnostic.py', '--jobs', '4'])
     settings_path = port/'config/local-tools.json'
     settings = json.loads(settings_path.read_text())
     if font:
         settings['fps_font_source'] = str(Path(font).resolve())
         settings_path.write_text(json.dumps(settings, indent=2), encoding='utf-8')
+    advance(40, 'Analyzing game executable')
     run(['scripts/analyze.py'])
     # The mapped image is required by callback verification during native build.
+    advance(45, 'Mapping game image')
     environment = build_environment(settings)
     tool_build = port/'build/title-update-tool'
     cmake = settings['cmake']
@@ -158,14 +175,18 @@ def compile_game(game, destination, llvm='', msvc='', font='', accept_license=Fa
             str(port/'private/probe-user'), str(output), '--base-image'], cwd=port,
             env=environment, stdout=log, stderr=log, check=True, creationflags=flags)
     shutil.copy2(output/'loaded-image.bin', port/'private/loaded-image.bin')
+    advance(50, 'Generating native game code')
     run(['scripts/recompile.py'])
-    run(['scripts/build.py', '--game', '--opt-level', '1', '--jobs', '4'])
+    advance(60, 'Configuring native game build')
+    run(['scripts/build.py', '--game', '--opt-level', '1', '--jobs', '4'], native_progress=True)
+    advance(99, 'Staging runtime files')
     runtime_folder=next((Path(settings['msvc'])/'VC/Redist/MSVC').glob('*/x64/Microsoft.VC143.CRT'),None)
     if runtime_folder:
         for library in runtime_folder.glob('*.dll'):
             shutil.copy2(library,port/'build/game'/library.name)
     for name in ('ResetSaves.cmd', 'scripts/reset_saves.ps1'):
         shutil.copy2(port/name, port/'build/game'/Path(name).name)
+    advance(100, 'Build complete')
     emit('Build complete: '+str(port/'build/game/HappyWars.exe'))
     return port/'build/game/HappyWars.exe'
 
@@ -201,21 +222,34 @@ def main():
         justify='left').grid(row=3,columnspan=3,sticky='w')
     status=tk.StringVar(value='Select your game and an empty build folder.')
     ttk.Label(frame,textvariable=status,wraplength=600).grid(row=4,columnspan=3,sticky='w',pady=10)
+    percentage=tk.DoubleVar(value=0)
+    progress_text=tk.StringVar(value='0%')
+    stage_text=tk.StringVar(value='Overall progress (estimated)')
+    bar=ttk.Progressbar(frame,maximum=100,variable=percentage,mode='determinate')
+    bar.grid(row=5,column=0,columnspan=2,sticky='ew',pady=(0,6))
+    ttk.Label(frame,textvariable=progress_text).grid(row=5,column=2)
+    ttk.Label(frame,textvariable=stage_text).grid(row=6,columnspan=3,sticky='w',pady=(0,10))
     events=queue.Queue(); result={'path':None,'busy':False}
     def worker(values,accepted):
         try:
-            path=compile_game(**values,accept_license=accepted,emit=lambda s:events.put(('status',s)))
+            path=compile_game(**values,accept_license=accepted,emit=lambda s:events.put(('status',s)),
+                progress=lambda n,s:events.put(('progress',(n,s))))
             events.put(('done',path))
         except Exception as error: events.put(('error',str(error)))
     def build():
         if result['busy']: return
         result['busy']=True; button.state(['disabled'])
+        percentage.set(0); progress_text.set('0%'); open_button.state(['disabled'])
         threading.Thread(target=worker,args=({k:v.get() for k,v in fields.items()},consent.get()),daemon=True).start()
     def poll():
         try:
             while True:
                 kind,value=events.get_nowait()
                 if kind=='status': status.set(value[-260:])
+                elif kind=='progress':
+                    percentage.set(max(percentage.get(),value[0]))
+                    progress_text.set(str(int(percentage.get()))+'%')
+                    stage_text.set(value[1])
                 else:
                     result['busy']=False; button.state(['!disabled'])
                     if kind=='error':
@@ -230,15 +264,16 @@ def main():
         if result['busy']:
             messagebox.showinfo('Build running','Wait for the build to finish before closing.',parent=window)
         else: window.destroy()
-    button=ttk.Button(frame,text='Build',command=build); button.grid(row=5,column=2,sticky='e')
+    button=ttk.Button(frame,text='Build',command=build); button.grid(row=7,column=2,sticky='e')
     open_button=ttk.Button(frame,text='Open game folder',command=lambda:os.startfile(result['path'].parent))
-    open_button.grid(row=5,column=0,columnspan=2,sticky='w'); open_button.state(['disabled'])
+    open_button.grid(row=7,column=0,columnspan=2,sticky='w'); open_button.state(['disabled'])
     window.protocol('WM_DELETE_WINDOW',close); window.after(100,poll)
     window.resizable(True,False)
     if self_test:
         window.update_idletasks()
         report = {'title':window.title(),'theme':style.theme_use(),
             'width':window.winfo_reqwidth(),'height':window.winfo_reqheight(),'inputs':list(fields),
+            'progress_maximum':float(bar['maximum']),'progress_mode':str(bar['mode']),
             'bundled_sources':(Path(getattr(sys,'_MEIPASS',ROOT))/'source.zip').is_file()}
         output=Path(sys.argv[sys.argv.index('--self-test-report')+1])
         output.write_text(json.dumps(report,indent=2),encoding='utf-8')

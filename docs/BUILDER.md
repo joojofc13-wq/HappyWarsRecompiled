@@ -66,3 +66,8 @@ This is not a clean Windows VM test and does not establish stable gameplay.
 The UI uses Python/Tk and PyInstaller; see the
 [PyInstaller license](https://pyinstaller.org/en/stable/license.html). Subprocess
 handling follows its [Windows guidance](https://pyinstaller.org/en/stable/common-issues-and-pitfalls.html).
+
+The progress bar estimates overall progress from 0 to 100%. Native compilation
+updates from completed Ninja tasks. Tool setup and code generation advance at
+stage boundaries, so the percentage can remain unchanged while work continues.
+100% means the executable and runtime files are ready.

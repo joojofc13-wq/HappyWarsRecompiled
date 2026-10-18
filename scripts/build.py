@@ -3,6 +3,7 @@ import argparse
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 
@@ -14,10 +15,15 @@ def run(command, log, env):
     with (ROOT/'logs'/log).open('w',encoding='utf-8') as output:
         output.write('Command: '+subprocess.list2cmdline([str(x) for x in command])+'\n')
         output.flush()
-        result=subprocess.run([str(x) for x in command],cwd=ROOT,env=env,stdout=output,stderr=subprocess.STDOUT)
-    if result.returncode:
+        process=subprocess.Popen([str(x) for x in command],cwd=ROOT,env=env,
+            stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,errors='replace')
+        for line in process.stdout:
+            output.write(line); output.flush()
+            if re.match(r'^\[\d+/\d+\]',line): print(line.rstrip(),flush=True)
+        returncode=process.wait()
+    if returncode:
         print((ROOT/'logs'/log).read_text(encoding='utf-8',errors='replace')[-8000:])
-        raise SystemExit(result.returncode)
+        raise SystemExit(returncode)
     print(f'{log}: OK',flush=True)
 
 

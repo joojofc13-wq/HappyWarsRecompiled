@@ -14,6 +14,7 @@ Microsoft SDK are prepared automatically; see the
 
 ## Changelog
 
+- Show estimated overall progress from 0 to 100%, with live native compilation counts.
 - Add a Windows builder for an owned TU46 copy, with exact executable validation.
 - Download pinned portable tools automatically and verify their hashes.
 - Avoid Microsoft SDK extraction failures with long output paths.
