@@ -54,3 +54,11 @@ manifest and `SHA256SUMS.txt` under `build/builder-release`.
 The UI uses Python/Tk and PyInstaller. The latter's bootloader exception permits
 distribution; see the [PyInstaller license](https://pyinstaller.org/en/stable/license.html).
 Toolchains and game resources remain separate inputs.
+
+## Validation scope
+
+A new staging directory completed image loading, code generation and native
+compilation with the existing tested toolchain. The separate packaged UI startup
+check passed with the Windows `vista` theme. Direct game startup from an unrelated
+working directory also succeeded. This does not validate a clean machine with
+fresh tool downloads or establish stable matches.

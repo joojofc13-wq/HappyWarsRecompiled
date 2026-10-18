@@ -9,7 +9,7 @@ The public repository contains project-owned source, tooling and the
 [TU46 development profile](ports/tu46/README.md). It does not include a playable
 binary, game assets, translated game code, extracted fonts or saves. The root
 configuration still targets the original base version; TU46 has separate hook
-addresses and boundary declarations. The experimental Windows builder applies the TU46 profile; clean-machine dependency setup still needs validation.
+addresses and boundary declarations. The Windows builder completed a new staged native build with the existing tested toolchain; clean-machine dependency setup still needs validation.
 
 | Component | Evidence and remaining work |
 | --- | --- |

@@ -28,6 +28,9 @@ interface. Python, Git and LLVM remain prerequisites; see the
 
 ## Validation
 
+The builder completed a new staged native build using the existing tested
+toolchain, and the packaged Windows UI passed its startup check. Clean-machine
+dependency installation remains unverified. Direct executable startup also passed.
 Interactive testing confirmed menu access, Skirmish gameplay, the FPS counter,
 
 ## Known Issues
