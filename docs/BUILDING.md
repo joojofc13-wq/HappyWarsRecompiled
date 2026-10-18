@@ -1,5 +1,8 @@
 # Building from Source
 
+For the two-folder Windows interface with automatic tool downloads, use the
+[builder](BUILDER.md). The commands below describe manual developer setup.
+
 You need your own game package, Python, Git, Clang, MSVC headers and libraries, and the Windows SDK. Dependency versions and hashes are pinned in `config/upstream-lock.json`.
 
 ```powershell

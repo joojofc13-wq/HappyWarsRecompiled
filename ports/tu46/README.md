@@ -37,4 +37,5 @@ code, loaded images and runtime logs stay local.
 
 Game Home, tutorial and Skirmish gameplay have been reached. Sustained gameplay
 still crashes on the tested AMD GPU, and the Marketplace warning persists.
-and [GPU diagnostics](../../docs/GPU_DIAGNOSTICS.md).
+See [current status](../../STATUS.md) and
+[GPU diagnostics](../../docs/GPU_DIAGNOSTICS.md).

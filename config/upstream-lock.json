@@ -77,5 +77,23 @@
   "builder_packages": {
     "pyinstaller": "6.22.3",
     "pyinstaller-hooks-contrib": "2026.8"
+  },
+  "portable_tools": {
+    "python": {
+      "url": "https://www.python.org/ftp/python/3.14.7/python-3.14.7-embed-amd64.zip",
+      "sha256": "d297e5ff019966817ad8502465176139f2d3d840fa4ed84b13bed399a6ab1f15"
+    },
+    "pip": {
+      "url": "https://files.pythonhosted.org/packages/44/3c/d717024885424591d5376220b5e836c2d5293ce2011523c9de23ff7bf068/pip-25.3-py3-none-any.whl",
+      "sha256": "9655943313a94722b7774661c21049070f6bbb0a1516bf02f7c8d5d9201514cd"
+    },
+    "git": {
+      "url": "https://github.com/git-for-windows/git/releases/download/v2.54.0.windows.1/MinGit-2.54.0-64-bit.zip",
+      "sha256": "04f937e1f0918b17b9be6f2294cb2bb66e96e1d9832d1c298e2de088a1d0e668"
+    },
+    "llvm": {
+      "url": "https://github.com/mstorsjo/llvm-mingw/releases/download/20261006/llvm-mingw-20261006-ucrt-x86_64.zip",
+      "sha256": "317492c456aa27ee607a5919f1d2d38dcdc1112516a24d0bf4b00d078f52d17a"
+    }
   }
 }

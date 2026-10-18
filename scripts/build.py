@@ -30,7 +30,8 @@ def environment(settings):
     env['INCLUDE']=';'.join(str(p) for p in [vc/'include',sdk/'Include'/version/'ucrt',
         sdk/'Include'/version/'shared',sdk/'Include'/version/'um',sdk/'Include'/version/'winrt'])
     env['LIB']=';'.join(str(p) for p in [vc/'lib/x64',sdk/'Lib'/version/'ucrt/x64',sdk/'Lib'/version/'um/x64'])
-    env['PATH']=os.pathsep.join([settings.get('linker_bin',''),str(vc/'bin/Hostx64/x64'),str(sdk/'bin'/version/'x64'),
+    crt=next((msvc/'VC/Redist/MSVC').glob('*/x64/Microsoft.VC143.CRT'),None)
+    env['PATH']=os.pathsep.join(([str(crt)] if crt else [])+[settings.get('linker_bin',''),str(vc/'bin/Hostx64/x64'),str(sdk/'bin'/version/'x64'),
         str(pathlib.Path(settings['clang']).parent),str(pathlib.Path(settings['ninja']).parent),
         str(pathlib.Path(settings['sdk'])/'bin'),env['PATH']])
     return env

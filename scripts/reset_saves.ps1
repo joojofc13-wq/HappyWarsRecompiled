@@ -13,7 +13,7 @@ $running = Get-CimInstance Win32_Process -Filter "Name='HappyWars.exe'" | Where-
 }
 if ($running) { throw 'Close this game before resetting saves.' }
 if (-not $Yes) {
-    Write-Host 'Permanently delete saves, database backups for this port?'
+    Write-Host 'Permanently delete saves and database backups for this port?'
     Write-Host 'Game files, shader caches, settings and unrelated games are preserved.'
     if ((Read-Host 'Type RESET to continue') -cne 'RESET') { exit 0 }
 }

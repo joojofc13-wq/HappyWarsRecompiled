@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import sys
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -76,6 +77,9 @@ def launch(label='', root=ROOT):
                 selected[key] = gpu[key]
             session['gpu_settings'] = selected
         session['profile'] = 'private/smoke-user'
+        if getattr(sys,'frozen',False) and sys.platform=='win32':
+            import ctypes
+            ctypes.windll.kernel32.SetDllDirectoryW(None)
         # Keep launcher output in this session, including failures before runtime logging starts.
         with (directory/f'{identity}.launcher.txt').open('wb') as output:
             process = subprocess.Popen(command, cwd=executable.parent,

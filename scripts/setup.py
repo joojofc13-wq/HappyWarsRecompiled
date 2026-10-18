@@ -17,11 +17,13 @@ ROOT=pathlib.Path(__file__).resolve().parents[1]
 
 
 def pinned_clone(repository,commit,destination):
-    if not destination.exists():
+    fresh=not destination.exists()
+    if fresh:
         subprocess.run(['git','clone','--no-checkout',repository,str(destination)],check=True)
     current=subprocess.check_output(['git','-C',str(destination),'rev-parse','HEAD'],text=True).strip()
     if current!=commit:
         subprocess.run(['git','-C',str(destination),'fetch','origin',commit],check=True)
+    if fresh or current!=commit:
         subprocess.run(['git','-C',str(destination),'checkout','--detach',commit],check=True)
 
 

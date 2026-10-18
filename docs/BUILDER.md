@@ -1,64 +1,68 @@
 # Windows builder
 
-Download **HappyWarsBuilder.exe** from the project's prereleases. It uses the
-Windows system theme and builds native game code from your own files. It contains
-no Happy Wars executable, assets, translated game code, fonts or saves.
+Download **HappyWarsBuilder.exe** from the project's prereleases. Select your
+**Game folder** and an empty **Output folder**, accept the Microsoft build-tools
+license, then click **Build**. Those are the only folder fields.
 
 Use your own extracted Xbox 360 copy from **Happy Wars Revival**: TU46,
-version **0.0.46.7**, Media ID **5CEC066D**. The builder verifies its executable
-SHA-256 before preparing the destination. Other versions are rejected.
+version **0.0.46.7**, Media ID **5CEC066D**. The builder verifies the executable
+hash before preparing the output. Earlier versions are not guaranteed to work.
 
 ## Requirements
 
-- Windows x64, Python 3.11 or newer with pip, Git for Windows and LLVM/Clang.
-- An LLVM `bin` folder containing `clang.exe` or `clang-<major>.exe` and `lld-link.exe`.
-- Portable Microsoft headers and Windows SDK, or acceptance of their license for local download.
-- Your own complete extracted TU46 game folder containing `Default.xex` and `media`.
-- Optional: the original `media/scaleform/Font_en.bres` from your own base game enables the FPS overlay. TU46 uses different font resources; without the compatible font, the game builds and runs with the FPS overlay disabled.
-- Space for a copy of the game, dependencies, generated C++ and object files. Build duration has not been measured.
+- Windows x64 and an internet connection for the first build.
+- Your own complete extracted TU46 copy containing `Default.xex` and `media`.
+- Space for the copied game, portable tools, generated C++ and object files.
 
-The builder includes its UI runtime. Compiler scripts require an external Python
-installation. It downloads pinned SDK/build dependencies and retrieves pinned
-tool sources. LLVM, Git and Python must already be installed.
+Python, Git, LLVM, Microsoft headers, Windows SDK and the pinned ReXGlue tools
+are downloaded and prepared automatically. You do not need to install or locate
+them first. Downloads are pinned in `config/upstream-lock.json`; executable-tool
+archives and the SDK are checked against recorded hashes. The Microsoft installer
+is used to extract headers and libraries locally, not to install Visual Studio.
 
-## Build
+Tools stay under the output's `tools` directory. A short temporary directory is
+used during Microsoft SDK extraction to avoid Windows Installer path limits.
+No system PATH change is made. Game files and updates are never downloaded.
 
-1. Select the game folder, a new or empty build folder and your LLVM `bin` folder.
-2. Select a portable Microsoft SDK, or check the license box to download it.
-3. Supply the owned base-game font if needed, then click **Build**.
-4. Click **Open game folder** and double-click **HappyWars.exe**.
+## Build and play
 
-The original input remains unchanged. Nonempty output folders are rejected.
-A failed build retains its files and `logs/builder.log`; select a new empty
-folder for another attempt. Output is `build/game/HappyWars.exe` with its runtime
-libraries and locally extracted font.
+1. Select the game folder and a new or empty output folder.
+2. Read the **License** link and accept the Microsoft build-tools license.
+3. Click **Build** and wait for completion. Downloads and native compilation can take time.
+4. Click **Open game folder**, then double-click **HappyWars.exe**.
 
-## Saves and reset
+The original input is unchanged. Nonempty output folders are rejected. Failed
+builds retain their files and logs for diagnosis; use a new empty output for
+another attempt. The main log is `logs/builder.log`.
 
-The game resolves local paths automatically when opened from Explorer.
-Normal saves use `private/smoke-user/title-storage.sqlite`; mod saves use
-in those profile directories.
+The result is `build/game/HappyWars.exe`, runtime libraries and the save-reset
+helper. Playing does not require LLVM or Python installed separately.
 
-Compilation places **ResetSaves.cmd** beside the game. Close the game, run the
-helper and type **RESET** to permanently clear this port's save databases,
-backups and decoded analysis save. Game resources, shader caches, mod settings
-and other games are preserved. The next launch creates a fresh profile.
-Linked profile directories and active game processes are rejected.
+The FPS counter uses an optional compatible original Scaleform font. TU46 uses
+different font resources, so a build without that optional base-game font keeps
+the FPS overlay disabled. Maintainers can supply their owned font through
+`fps_font_source` in ignored `config/local-tools.json`.
 
-## Packaging
+## Saves
 
-Maintainers run `scripts/package_builder.py` with PyInstaller 6.22.3 installed.
-It audits and embeds the exact Git index and emits the builder, a source/hash
-manifest and `SHA256SUMS.txt` under `build/builder-release`.
+Saves use `private/smoke-user/title-storage.sqlite`. Backups and SQLite journal
+files stay in that profile directory. Close the game and use **ResetSaves.cmd** to reset this
+port's saves after typing **RESET**. Game files, shader caches, tool downloads,
+settings and unrelated games are preserved. The next launch starts a new save.
 
-The UI uses Python/Tk and PyInstaller. The latter's bootloader exception permits
-distribution; see the [PyInstaller license](https://pyinstaller.org/en/stable/license.html).
-Toolchains and game resources remain separate inputs.
+## Packaging and validation
 
-## Validation scope
+Maintainers use the pinned PyInstaller 6.22.3 and run
+`scripts/package_builder.py --output build/release-public`. It embeds the audited
+Git index and emits the builder, a source/hash manifest and `SHA256SUMS.txt`.
+No original game executable, asset, translated game code, font or save is included.
 
-A new staging directory completed image loading, code generation and native
-compilation with the existing tested toolchain. The separate packaged UI startup
-check passed with the Windows `vista` theme. Direct game startup from an unrelated
-working directory also succeeded. This does not validate a clean machine with
-fresh tool downloads or establish stable matches.
+The portable Python, pip, Git and LLVM downloads were exercised. Microsoft SDK
+extraction, SDK/tool setup and native recompiler-tool compilation passed using
+those portable tools with external developer tools removed from the test PATH.
+The earlier staged TU46 native game build and direct executable startup passed.
+This is not a clean Windows VM test and does not establish stable gameplay.
+
+The UI uses Python/Tk and PyInstaller; see the
+[PyInstaller license](https://pyinstaller.org/en/stable/license.html). Subprocess
+handling follows its [Windows guidance](https://pyinstaller.org/en/stable/common-issues-and-pitfalls.html).

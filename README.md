@@ -14,7 +14,7 @@ The goal is to preserve the original campaign and offline Skirmish modes, includ
 
 **Experimental:** the TU46 development port reaches Game Home, the tutorial and Skirmish gameplay. Matches remain unstable: a D3D12 GPU crash is under investigation, and the Marketplace warning persists. There is no ready-to-play public binary.
 
-[Latest prerelease](https://github.com/joojofc13-wq/HappyWarsRecompiled/releases) · [Project status](STATUS.md) · [Build guide](docs/BUILDING.md)
+[Latest prerelease](https://github.com/joojofc13-wq/HappyWarsRecompiled/releases) Â· [Project status](STATUS.md) Â· [Build guide](docs/BUILDING.md)
 
 ## Table of Contents
 
@@ -31,16 +31,17 @@ The goal is to preserve the original campaign and offline Skirmish modes, includ
 
 Development currently targets Windows x64 and a Direct3D 12 GPU supported by the pinned ReXGlue Xenos backend. Minimum hardware and performance requirements have not been measured.
 
-Building requires Python, Git, Clang, MSVC headers and libraries, the Windows SDK, and your own Happy Wars Xbox 360 package. See the [tested toolchain](docs/TOOLCHAIN.md).
+The Windows builder needs your own compatible game files, an internet connection and space for the output. It prepares its portable build tools automatically. Manual source builds use the [tested toolchain](docs/TOOLCHAIN.md).
 
 ## How to Run
 
-Download **HappyWarsBuilder.exe** from the [prereleases](https://github.com/joojofc13-wq/HappyWarsRecompiled/releases) to compile your supported TU46 copy through a simple Windows interface. See the [builder guide](docs/BUILDER.md) for Python, Git, LLVM and Microsoft SDK requirements. No game binary or assets are included.
+Download **HappyWarsBuilder.exe** from the [prereleases](https://github.com/joojofc13-wq/HappyWarsRecompiled/releases) to compile your supported TU46 copy through a simple Windows interface. Select only the game and output folders; Python, Git, LLVM and the Microsoft SDK are prepared automatically. See the [builder guide](docs/BUILDER.md). No game binary or assets are included.
 
 After building, open `build/game` and double-click **HappyWars.exe**. It finds the game and save paths automatically. **ResetSaves.cmd** beside it resets only this port's saves after confirmation. The development launcher remains available for separate playtest logs.
 
 Keyboard controls: Enter for Start, Space for A, Backspace for B, and WASD for the left stick. F6 toggles the FPS counter. The SDK also supports controllers through SDL.
 
+The [Windows builder](docs/BUILDER.md) applies the [TU46 development profile](ports/tu46/README.md) automatically.
 
 ## Implemented Features
 
@@ -91,7 +92,7 @@ The target is fully local play. The current code uses a synthetic profile and an
 
 **Are all maps and modes unlocked?**
 
-Skirmish has been tested, but the full set of maps and modes has not been validated. Inventory grants also retain the original 1024-entry capacity.
+Skirmish has been tested, but the full set of maps and modes has not been validated.
 
 **Will I need my own game files?**
 

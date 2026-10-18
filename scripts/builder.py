@@ -70,35 +70,40 @@ def prepare_sources(destination):
     return destination
 
 
-def compile_game(game, destination, llvm, msvc='', font='', accept_license=False, emit=print, local_settings=None):
+def compile_game(game, destination, llvm='', msvc='', font='', accept_license=False, emit=print, local_settings=None):
     game = validate_game(game)
+    if getattr(sys,'frozen',False) and sys.platform=='win32':
+        import ctypes
+        ctypes.windll.kernel32.SetDllDirectoryW(None)
     if font and not Path(font).is_file():
         raise ValueError('The optional FPS font file does not exist.')
     destination = Path(destination).resolve()
     if destination == game or destination.is_relative_to(game) or game.is_relative_to(destination):
         raise ValueError('Build folder and original game folder must be separate.')
-    if not shutil.which('git'):
-        raise RuntimeError('Install Git for Windows and reopen the builder.')
-    python = python_command()
+    automatic = not local_settings and not llvm
+    if automatic and not accept_license:
+        raise ValueError('Accept the Microsoft build-tools license to download the required headers and SDK.')
+    emit('Preparing project sources')
+    port = prepare_sources(destination)
     flags = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
+    if automatic:
+        from bootstrap_tools import bootstrap
+        tools = bootstrap(port, emit)
+        python = tools['python']; llvm = tools['llvm']
+    else:
+        python = python_command()
+        if not shutil.which('git'):
+            raise RuntimeError('Git is missing from the manual toolchain.')
     check = subprocess.run(python+['-c', 'import sys; assert sys.version_info >= (3,11)'],
                            capture_output=True, creationflags=flags)
     if check.returncode:
-        raise RuntimeError('Python 3.11 or newer is required.')
-    if not local_settings:
-        llvm = Path(llvm).resolve()
-        if not (llvm/'clang.exe').exists() and not list(llvm.glob('clang-[0-9]*.exe')):
-            raise ValueError('Select an LLVM bin folder containing clang.exe.')
-        if not msvc and not accept_license:
-            raise ValueError('Choose an existing portable Microsoft SDK or accept its license to download it.')
-    emit('Preparing project sources')
-    port = prepare_sources(destination)
+        raise RuntimeError('The build Python runtime could not start.')
     emit('Copying your game files; the original folder is unchanged')
     shutil.copytree(game, port/'private/game')
     log_path = port/'logs/builder.log'
     def run(arguments):
         emit('Running '+str(arguments[0]))
-        command = python+[str(port/arguments[0])]+[str(x) for x in arguments[1:]]
+        command = python+['-u',str(port/arguments[0])]+[str(x) for x in arguments[1:]]
         environment = os.environ.copy()
         environment['PYTHONPATH'] = str(port/'tools/python')
         with log_path.open('a', encoding='utf-8') as log:
@@ -121,6 +126,9 @@ def compile_game(game, destination, llvm, msvc='', font='', accept_license=False
             emit('Downloading Microsoft headers and Windows SDK')
             run(['scripts/install_msvc.py', '--accept-license'])
             msvc = port/'tools/msvc'
+        runtime_folder=next((Path(msvc)/'VC/Redist/MSVC').glob('*/x64/Microsoft.VC143.CRT'),None)
+        if runtime_folder:
+            os.environ['PATH']=str(runtime_folder)+os.pathsep+os.environ.get('PATH','')
         run(['scripts/setup.py', '--llvm-bin', llvm, '--msvc', msvc, '--diagnostic-source'])
         run(['scripts/build_diagnostic.py', '--jobs', '4'])
     settings_path = port/'config/local-tools.json'
@@ -152,6 +160,10 @@ def compile_game(game, destination, llvm, msvc='', font='', accept_license=False
     shutil.copy2(output/'loaded-image.bin', port/'private/loaded-image.bin')
     run(['scripts/recompile.py'])
     run(['scripts/build.py', '--game', '--opt-level', '1', '--jobs', '4'])
+    runtime_folder=next((Path(settings['msvc'])/'VC/Redist/MSVC').glob('*/x64/Microsoft.VC143.CRT'),None)
+    if runtime_folder:
+        for library in runtime_folder.glob('*.dll'):
+            shutil.copy2(library,port/'build/game'/library.name)
     for name in ('ResetSaves.cmd', 'scripts/reset_saves.ps1'):
         shutil.copy2(port/name, port/'build/game'/Path(name).name)
     emit('Build complete: '+str(port/'build/game/HappyWars.exe'))
@@ -169,8 +181,7 @@ def main():
     frame = ttk.Frame(window, padding=12); frame.grid(sticky='nsew')
     window.columnconfigure(0, weight=1); frame.columnconfigure(1, weight=1)
     fields = {}
-    labels = [('game', 'Game folder'), ('destination', 'Build folder'), ('llvm', 'LLVM bin folder'),
-              ('msvc', 'Microsoft SDK (optional)'), ('font', 'FPS game font (optional)')]
+    labels = [('game', 'Game folder'), ('destination', 'Output folder')]
     for row,(key,label) in enumerate(labels):
         ttk.Label(frame,text=label).grid(row=row,column=0,sticky='w',padx=(0,8),pady=4)
         value=tk.StringVar(); fields[key]=value
@@ -179,15 +190,17 @@ def main():
             selected = filedialog.askopenfilename(parent=window, filetypes=[('Game font','*.bres')]) if key=='font' else filedialog.askdirectory(parent=window)
             if selected: fields[key].set(selected)
         ttk.Button(frame,text='Browse...',command=browse).grid(row=row,column=2,padx=(8,0))
-    compiler = shutil.which('clang')
-    if compiler: fields['llvm'].set(str(Path(compiler).parent))
     consent=tk.BooleanVar(value=False)
-    ttk.Checkbutton(frame,text='Accept Microsoft build-tools license and download SDK if needed',
-        variable=consent).grid(row=5,columnspan=3,sticky='w',pady=8)
-    ttk.Label(frame,text='TU46 0.0.46.7 only. Requires Python 3.11+, Git and LLVM.\nGame content is never downloaded. Gameplay remains experimental.',
-        justify='left').grid(row=6,columnspan=3,sticky='w')
+    ttk.Checkbutton(frame,text='Accept Microsoft build-tools license',
+        variable=consent).grid(row=2,columnspan=2,sticky='w',pady=8)
+    def license_terms():
+        import webbrowser
+        webbrowser.open('https://go.microsoft.com/fwlink/?LinkId=2179911')
+    ttk.Button(frame,text='License',command=license_terms).grid(row=2,column=2,padx=(8,0))
+    ttk.Label(frame,text='TU46 0.0.46.7 only. Build tools are downloaded automatically.\nGame content is never downloaded. Gameplay remains experimental.',
+        justify='left').grid(row=3,columnspan=3,sticky='w')
     status=tk.StringVar(value='Select your game and an empty build folder.')
-    ttk.Label(frame,textvariable=status,wraplength=600).grid(row=7,columnspan=3,sticky='w',pady=10)
+    ttk.Label(frame,textvariable=status,wraplength=600).grid(row=4,columnspan=3,sticky='w',pady=10)
     events=queue.Queue(); result={'path':None,'busy':False}
     def worker(values,accepted):
         try:
@@ -217,15 +230,15 @@ def main():
         if result['busy']:
             messagebox.showinfo('Build running','Wait for the build to finish before closing.',parent=window)
         else: window.destroy()
-    button=ttk.Button(frame,text='Build',command=build); button.grid(row=8,column=2,sticky='e')
+    button=ttk.Button(frame,text='Build',command=build); button.grid(row=5,column=2,sticky='e')
     open_button=ttk.Button(frame,text='Open game folder',command=lambda:os.startfile(result['path'].parent))
-    open_button.grid(row=8,column=0,columnspan=2,sticky='w'); open_button.state(['disabled'])
+    open_button.grid(row=5,column=0,columnspan=2,sticky='w'); open_button.state(['disabled'])
     window.protocol('WM_DELETE_WINDOW',close); window.after(100,poll)
     window.resizable(True,False)
     if self_test:
         window.update_idletasks()
         report = {'title':window.title(),'theme':style.theme_use(),
-            'width':window.winfo_reqwidth(),'height':window.winfo_reqheight(),
+            'width':window.winfo_reqwidth(),'height':window.winfo_reqheight(),'inputs':list(fields),
             'bundled_sources':(Path(getattr(sys,'_MEIPASS',ROOT))/'source.zip').is_file()}
         output=Path(sys.argv[sys.argv.index('--self-test-report')+1])
         output.write_text(json.dumps(report,indent=2),encoding='utf-8')

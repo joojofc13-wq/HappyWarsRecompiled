@@ -9,7 +9,7 @@ The public repository contains project-owned source, tooling and the
 [TU46 development profile](ports/tu46/README.md). It does not include a playable
 binary, game assets, translated game code, extracted fonts or saves. The root
 configuration still targets the original base version; TU46 has separate hook
-addresses and boundary declarations. The Windows builder completed a new staged native build with the existing tested toolchain; clean-machine dependency setup still needs validation.
+addresses and boundary declarations. The Windows builder completed a new staged native build with the existing tested toolchain; portable dependency setup and native recompiler-tool compilation also passed with external developer tools removed from the test PATH. A clean Windows VM test remains pending.
 
 | Component | Evidence and remaining work |
 | --- | --- |
@@ -23,7 +23,6 @@ addresses and boundary declarations. The Windows builder completed a new staged 
 | Saves | Original payloads stored in SQLite with slots, revisions, transactions and dated backups; complete progression recovery unverified |
 | Menu and Skirmish | Game Home, tutorial and short Skirmish gameplay confirmed |
 | Marketplace | Warning persists; a valid local catalog protocol remains unfinished |
-| Inventory | 1024-entry capacity retained; crossover grants prioritized; corrected visibility still needs confirmation |
 | Tickets and Premium | Local ticket hooks and permanent Premium policy implemented; ticket spending and Premium reward/UI effects need validation |
 | Maps and modes | Full coverage, match completion and rewards remain unverified |
 | GPU stability | Disabling bindless resources did not fix the crash; committed shared memory is the current unverified trial |
@@ -33,7 +32,8 @@ addresses and boundary declarations. The Windows builder completed a new staged 
 
 The last full native CTest run passed 16 tests covering storage, selected
 translated routines, profile/authentication contracts, HTTP, network identity,
-statistics enumeration and local ticket accounting. Python checks cover save
+statistics enumeration and local ticket accounting. Python checks cover tool
+integrity, archive containment, playtest grouping
 and adapter-pattern recognition. These checks do not establish stable gameplay.
 
 The current GPU trial changes resource allocation without modifying Windows
