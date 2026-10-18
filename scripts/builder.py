@@ -72,6 +72,8 @@ def prepare_sources(destination):
 
 def compile_game(game, destination, llvm, msvc='', font='', accept_license=False, emit=print, local_settings=None):
     game = validate_game(game)
+    if font and not Path(font).is_file():
+        raise ValueError('The optional FPS font file does not exist.')
     destination = Path(destination).resolve()
     if destination == game or destination.is_relative_to(game) or game.is_relative_to(destination):
         raise ValueError('Build folder and original game folder must be separate.')
@@ -168,7 +170,7 @@ def main():
     window.columnconfigure(0, weight=1); frame.columnconfigure(1, weight=1)
     fields = {}
     labels = [('game', 'Game folder'), ('destination', 'Build folder'), ('llvm', 'LLVM bin folder'),
-              ('msvc', 'Microsoft SDK (optional)'), ('font', 'Base game font (optional)')]
+              ('msvc', 'Microsoft SDK (optional)'), ('font', 'FPS game font (optional)')]
     for row,(key,label) in enumerate(labels):
         ttk.Label(frame,text=label).grid(row=row,column=0,sticky='w',padx=(0,8),pady=4)
         value=tk.StringVar(); fields[key]=value

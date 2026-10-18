@@ -22,10 +22,11 @@ files and `runtime/` files over their counterparts at the checkout root. Keep
 the other project sources and scripts. The CMake override enables
 `HAPPYWARS_TU46` and the runtime files select TU46 hook addresses.
 
-Run code generation and the normal native build from the build guide. The FPS
-font step needs the original `media/scaleform/Font_en.bres`; if your updated
+Run code generation and the normal native build from the build guide. The optional FPS
+font step uses the original `media/scaleform/Font_en.bres`; if your updated
 copy omits it, supply that resource from your own base game via the
-`fps_font_source` setting in ignored `config/local-tools.json`.
+`fps_font_source` setting in ignored `config/local-tools.json`. Without this
+compatible font, the game builds and runs with the FPS overlay disabled.
 
 The [Windows builder](../../docs/BUILDER.md) applies this profile automatically.
 The original development workspace completed the manual process. A clean-machine

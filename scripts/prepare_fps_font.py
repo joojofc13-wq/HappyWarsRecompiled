@@ -114,6 +114,9 @@ def prepare(python_path=None,source=None):
     from fontTools.pens.ttGlyphPen import TTGlyphPen
     from fontTools.ttLib import TTFont
     source=Path(source) if source else ROOT/'private/game/media/scaleform/Font_en.bres'
+    if not source.is_file() and source == ROOT/'private/game/media/scaleform/Font_en.bres':
+        print('Optional Scaleform font is absent; FPS overlay will be disabled.')
+        return None
     source_bytes=source.read_bytes()
     output=ROOT/'private/ui/happywars-fps.ttf'
     report_file=ROOT/'logs/fps-font.json'

@@ -14,7 +14,7 @@ SHA-256 before preparing the destination. Other versions are rejected.
 - An LLVM `bin` folder containing `clang.exe` or `clang-<major>.exe` and `lld-link.exe`.
 - Portable Microsoft headers and Windows SDK, or acceptance of their license for local download.
 - Your own complete extracted TU46 game folder containing `Default.xex` and `media`.
-- The original `media/scaleform/Font_en.bres`. If TU46 omits it, select this resource from your own base game in the optional font field.
+- Optional: the original `media/scaleform/Font_en.bres` from your own base game enables the FPS overlay. TU46 uses different font resources; without the compatible font, the game builds and runs with the FPS overlay disabled.
 - Space for a copy of the game, dependencies, generated C++ and object files. Build duration has not been measured.
 
 The builder includes its UI runtime. Compiler scripts require an external Python

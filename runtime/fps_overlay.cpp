@@ -72,7 +72,10 @@ ImFont* LoadGameFpsFont(ImFontAtlas* atlas) {
   const auto length=GetModuleFileNameW(nullptr,executable,32768);
   if(!length || length==32768) throw std::runtime_error("Cannot locate FPS font directory");
   const auto file=std::filesystem::path(executable).parent_path()/"fonts/happywars-fps.ttf";
-  if(!std::filesystem::exists(file)) throw std::runtime_error("Game FPS font is missing; rebuild with scripts/build.py");
+  if(!std::filesystem::exists(file)) {
+    REXLOG_INFO("FPS overlay disabled: optional original game font was not supplied");
+    return nullptr;
+  }
   const auto path=file.u8string();
   ImFontConfig config{};
   config.OversampleH=2;config.OversampleV=2;
@@ -83,5 +86,6 @@ ImFont* LoadGameFpsFont(ImFontAtlas* atlas) {
   return font;
 }
 std::unique_ptr<rex::ui::ImGuiDialog> CreateFpsOverlay(rex::ui::ImGuiDrawer* drawer,ImFont* font) {
+  if(!font) return {};
   return std::make_unique<FpsOverlay>(drawer,font);
 }

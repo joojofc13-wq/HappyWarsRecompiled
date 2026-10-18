@@ -168,10 +168,12 @@ add_custom_command(TARGET happywars POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/ResetSaves.cmd" "$<TARGET_FILE_DIR:happywars>/ResetSaves.cmd"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/scripts/reset_saves.ps1" "$<TARGET_FILE_DIR:happywars>/reset_saves.ps1")
 set(HAPPYWARS_FPS_FONT "${CMAKE_CURRENT_SOURCE_DIR}/private/ui/happywars-fps.ttf")
+if(EXISTS "${HAPPYWARS_FPS_FONT}")
 set_property(TARGET happywars APPEND PROPERTY LINK_DEPENDS "${HAPPYWARS_FPS_FONT}")
 add_custom_command(TARGET happywars POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:happywars>/fonts"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${HAPPYWARS_FPS_FONT}" "$<TARGET_FILE_DIR:happywars>/fonts/happywars-fps.ttf")
+endif()
 # Storage backend awaits a verified game-specific serialization hook.
 endif()
