@@ -16,6 +16,8 @@
 #include <rex/cvar.h>
 #include <fstream>
 #include <regex>
+#include <chrono>
+#include <random>
 
 class HappyWarsApp : public rex::ReXApp {
  public:
@@ -62,11 +64,26 @@ class HappyWarsApp : public rex::ReXApp {
       break;
     }
   }
+  void OnConfigureLogging(rex::LogConfig& config) override {
+    // Explicit playtest-launcher paths take precedence; direct launches get a
+    // new file instead of rotating over earlier crashes.
+    if(rex::cvar::GetFlagSource("log_file")>=rex::cvar::Source::kEnvironment) return;
+    const auto directory=rex::filesystem::GetExecutableFolder()/"logs/playtests";
+    std::filesystem::create_directories(directory);
+    const auto tick=std::chrono::system_clock::now().time_since_epoch().count();
+    const auto name="run-"+std::to_string(tick)+"-"+std::to_string(std::random_device{}())+".log";
+    config.log_file=directory/name;
+    const auto path=config.log_file.u8string();
+    rex::cvar::SetFlagByName("log_file",std::string(reinterpret_cast<const char*>(path.c_str()),path.size()));
+  }
   void OnPostSetup() override {
     InitializeFrameCounter();
     RegisterVerifiedCallbacks(*runtime());
     InitializeLocalHttp(runtime()->user_data_root()/"title-storage.sqlite");
-    InitializeCrashDiagnostics(runtime()->user_data_root()/"guest-fault.log");
+    auto fault=std::filesystem::u8path(rex::cvar::GetFlagByName("log_file"));
+    if(fault.empty()) fault=runtime()->user_data_root()/"guest-fault.log";
+    else fault.replace_extension(".guest-fault.log");
+    InitializeCrashDiagnostics(fault);
     REXLOG_INFO("Happy Wars native build: local profile policy and title-check tracing enabled");
   }
   void OnConfigureFonts(ImFontAtlas* atlas) override {

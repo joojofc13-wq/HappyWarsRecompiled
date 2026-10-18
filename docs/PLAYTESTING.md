@@ -18,3 +18,12 @@ from publication. HTTP request logging omits query strings.
 The report identifies observed missing functions. Other failures remain in each
 session's critical log lines and exit status; a run without a missing-function
 message is not automatically classified as successful gameplay.
+
+For standalone installations, use `Playtest.exe` beside `HappyWars.exe` when
+provided, or run `py scripts/playtest.py --root PATH_TO_GAME_FOLDER`. Each launch
+records its own log, executable hash, process exit code and failure summary.
+The launcher waits for you to finish playing and does not stop tests on a timer.
+
+Direct standalone launches now write unique `logs/playtests/run-*.log` files.
+Guest-fault traces use the same session prefix. The summary includes these runs
+without claiming an exit code when no launcher supervised the process.

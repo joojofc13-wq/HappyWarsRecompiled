@@ -56,15 +56,8 @@ Do not launch the game while an update is being installed.
 
 ## Frame rate
 
-TU46 builds enable an **experimental 60 FPS target**. Edit `HappyWars.ini` beside
-the executable and set `[Graphics] FrameRate=30` to restore original pacing.
-Restart after changing it. Existing INI settings are preserved during updates.
-Explicit video-refresh command-line or environment settings take precedence.
-
-This changes guest presentation refresh without changing the guest clock. Short
-boot trials reached a 61.5 FPS sample, and a user reported 60 FPS after menu
-access. Sustained gameplay, animation timing, physics and match timers still
-need validation. It does not guarantee 60 FPS on every PC or resolve GPU hangs.
+TU46 uses its original 30 FPS pacing. The experimental 120 Hz guest-video
+setting has been removed. Native memory optimizations and the F6 counter remain.
 
 ## Saves
 

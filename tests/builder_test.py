@@ -35,7 +35,7 @@ class BuilderTests(unittest.TestCase):
             target=root/'output'
             self.assertEqual(builder.stage_runtime(port,target),target/'HappyWars.exe')
             self.assertEqual({p.name for p in target.iterdir()},
-                {'HappyWars.exe','rexruntime.dll','rexgpu-xenos.dll','game','build-info.json','HappyWars.ini'})
+                {'HappyWars.exe','rexruntime.dll','rexgpu-xenos.dll','game','build-info.json'})
             self.assertEqual((target/'game/Default.xex').read_bytes(),b'owned')
             with self.assertRaises(ValueError): builder.stage_runtime(port,target)
     def test_existing_destination_is_preserved(self):

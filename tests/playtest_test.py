@@ -34,6 +34,26 @@ class PlaytestTests(unittest.TestCase):
             self.assertEqual(report['missing_functions'][0]['address'], '0x834BD2F8')
             self.assertEqual(report['missing_functions'][0]['occurrences'], 2)
 
+    def test_direct_runs_and_standalone_launcher_preserve_failure_evidence(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            (root/'game').mkdir();(root/'game/Default.xex').touch()
+            (root/'HappyWars.exe').write_bytes(b'fixture')
+            def process(command,**kwargs):
+                self.assertIn('--user_data_root='+str(root/'saves'),command)
+                log=Path(next(a.split('=',1)[1] for a in command if a.startswith('--log_file=')))
+                log.write_text('D3D12 device removed: DEVICE_HUNG\n')
+                result=unittest.mock.Mock(pid=321);result.wait.return_value=7
+                return result
+            with patch.object(playtest.subprocess,'Popen',side_effect=process):
+                session=playtest.launch('standalone',root)
+            self.assertEqual(session['exit_code'],7)
+            directory=root/'logs/playtests'
+            (directory/'run-123.log').write_text('[critical] Call to invalid or unregistered function at guest address 0x834bd2f8\n')
+            (directory/'run-123.guest-fault.log').write_text('fault details')
+            report=playtest.summarize(root)
+            self.assertEqual(len(report['sessions']),2)
+            self.assertEqual(report['missing_functions'][0]['address'],'0x834BD2F8')
     def test_exit_without_missing_function_is_not_classified_as_one(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

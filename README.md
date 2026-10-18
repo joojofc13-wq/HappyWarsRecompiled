@@ -14,7 +14,7 @@ The goal is to preserve the original campaign and offline Skirmish modes, includ
 
 **Experimental:** the TU46 development port reaches Game Home, the tutorial and Skirmish gameplay. Matches remain unstable: a D3D12 GPU crash is under investigation, and the Marketplace warning persists. There is no ready-to-play public binary.
 
-[Latest prerelease](https://github.com/joojofc13-wq/HappyWarsRecompiled/releases) Â· [Project status](STATUS.md) Â· [Build guide](docs/BUILDING.md)
+[Latest prerelease](https://github.com/joojofc13-wq/HappyWarsRecompiled/releases) Ã‚Â· [Project status](STATUS.md) Ã‚Â· [Build guide](docs/BUILDING.md)
 
 ## Table of Contents
 
@@ -50,7 +50,7 @@ The [Windows builder](docs/BUILDER.md) applies the [TU46 development profile](po
 - Virtual local LIVE profile that passes the account check.
 - In-process HTTP transport, SQLite title storage, dated backups and local statistics views.
 - FPS counter in every build, with an F6 toggle and an optional original game font.
-- Experimental 60 FPS target with a 30 FPS setting in `HappyWars.ini`.
+- Original 30 FPS pacing, with the native memory optimizations retained.
 - Native TU46 memory-copy and fill fast paths checked against the original routines.
 - Permanent local Premium membership from the first launch in TU46.
 - Windows builder with progress, existing-build updates, runtime backups and direct executable startup.

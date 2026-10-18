@@ -101,10 +101,6 @@ def install_runtime(port, destination, update=False):
                 shutil.copytree(native/'fonts', stage/'fonts')
             if not update:
                 shutil.copytree(port/'private/game', stage/'game')
-            if not (destination/'HappyWars.ini').exists():
-                (stage/'HappyWars.ini').write_text(
-                    '; Experimental 60 FPS mode. Use 30 to restore the original pacing.\n'
-                    '[Graphics]\nFrameRate=60\n', encoding='utf-8')
             metadata = port/'builder-source.json'
             provenance = json.loads(metadata.read_text()) if metadata.is_file() else {}
             managed = sorted(p.relative_to(stage).as_posix() for p in stage.rglob('*')
