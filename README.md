@@ -4,7 +4,7 @@
 
 # Happy Wars Recompiled
 
-> Use your own Xbox 360 copy from **Happy Wars Revival**. This is the most up-to-date copy tested with this project: **TU46, version 0.0.46.7, Media ID 5CEC066D**. Earlier versions are not guaranteed to work. The builder verifies the executable hash before compiling.
+> Use the Xbox 360 copy from **Happy Wars Revival**. This is the most up-to-date copy tested with this project: **TU46, version 0.0.46.7, Media ID 5CEC066D**. Earlier versions are not guaranteed to work. The builder verifies the executable hash before compiling.
 
 An unofficial native Windows x64 port of the Xbox 360 version of Happy Wars, built using static PowerPC recompilation with ReXGlue.
 
