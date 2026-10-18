@@ -77,6 +77,8 @@ def launch(label='', root=ROOT, profile=None, update=None):
         digest = hashlib.file_digest(source, 'sha256').hexdigest()
     session = {'id': identity, 'label': label, 'log': log.relative_to(root).as_posix(),
         'executable_sha256': digest,
+        'runtime_libraries_sha256': {name:hashlib.sha256((executable.parent/name).read_bytes()).hexdigest()
+            for name in ('rexruntime.dll','rexgpu-xenos.dll') if (executable.parent/name).is_file()},
         'state': 'starting'}
     def save():
         pending = manifest.with_suffix('.tmp')

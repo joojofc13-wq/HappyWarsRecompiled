@@ -9,12 +9,18 @@ Disabling bindless resources did not resolve the failure. DRED reported a GPU
 page fault at virtual address `0x0000000350CC0000`. Its allocation has not yet
 been identified, so the address alone does not establish the responsible resource.
 
-The current trial also disables `d3d12_tiled_shared_memory`. The SDK then creates
-a fully committed 512 MiB shared-memory buffer instead of a reserved buffer with
-sparse tile mappings. This tests whether missing tile backing contributes to the
-fault. It increases video-memory use and remains an unverified workaround.
-Bound descriptors and DRED remain enabled as in the preceding failed run.
-No Windows timeout or driver settings are changed.
+The committed-memory trial also failed with `DEVICE_HUNG`, while retaining the
+original 30 FPS pacing. DRED reported another page fault, at
+`0x0000000344140000`. This does not identify the allocation or prove that the
+same resource caused the earlier fault. Disabling sparse shared-memory mappings
+is not a confirmed fix.
+
+The local diagnostic GPU plugin applies `patches/rexglue-dred-allocations.patch`
+to the pinned SDK. It logs DRED matching live/recently freed allocation names and
+types, names guest textures and shared/EDRAM buffers, and records their buffer
+address ranges. These changes add diagnostics and do not claim to fix the hang.
+They do not require the optional Windows debug layer for DRED output.
+See Microsoft's [DRED allocation output](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_dred_page_fault_output).
 
 `scripts/playtest.py` accepts the optional boolean keys `d3d12_bindless`,
 `d3d12_debug`, and `d3d12_tiled_shared_memory` from `private/gpu-settings.json`.
