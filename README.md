@@ -10,8 +10,6 @@ The goal is to preserve the original campaign and offline Skirmish modes, includ
 
 **You must provide the game files from your own copy of Happy Wars.**
 
-**Work in progress:** the build renders the intro and 3D title screen. Local profile and storage services are under development. The mode menu and gameplay are not working yet.
-
 [Latest prerelease](https://github.com/joojofc13-wq/HappyWarsRecompiled/releases/latest) · [Project status](STATUS.md) · [Build guide](docs/BUILDING.md)
 
 ## Table of Contents
