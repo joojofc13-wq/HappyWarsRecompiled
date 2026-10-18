@@ -12,6 +12,7 @@ import threading
 import tempfile
 import zipfile
 from build import environment as build_environment
+from runtime_distribution import install_runtime, validate_destination, check_replaceable, REQUIRED
 
 ROOT = Path(__file__).resolve().parents[1]
 TU46_SHA = '14e0474a881bad5ef32bdf663651a8fb564bfd63fc23729aa50556739354e917'
@@ -72,44 +73,32 @@ def prepare_sources(destination):
     return destination
 
 
-def stage_runtime(port, destination):
-    """Export only runtime files and owned game data, never build sources or tools."""
-    destination=Path(destination)
-    if destination.exists() and any(destination.iterdir()):
-        raise ValueError('Output folder is no longer empty; export stopped without overwriting files.')
-    destination.mkdir(parents=True,exist_ok=True)
-    native=Path(port)/'build/game'
-    for name in ('HappyWars.exe','rexruntime.dll','rexgpu-xenos.dll'):
-        if not (native/name).is_file(): raise RuntimeError('Missing runtime file: '+name)
-    for source in native.iterdir():
-        if source.is_file() and (source.suffix.lower()=='.dll' or source.name in
-                ('HappyWars.exe','ResetSaves.cmd','reset_saves.ps1')):
-            shutil.copy2(source,destination/source.name)
-    if (native/'fonts').is_dir(): shutil.copytree(native/'fonts',destination/'fonts')
-    shutil.copytree(Path(port)/'private/game',destination/'game')
-    return destination/'HappyWars.exe'
+def stage_runtime(port, destination, update=False):
+    return install_runtime(port, destination, update)
 
 
-def compile_game(game, destination, llvm='', msvc='', font='', accept_license=False, emit=print, local_settings=None, progress=None):
+def compile_game(game, destination, llvm='', msvc='', font='', accept_license=False, emit=print, local_settings=None, progress=None, update=False):
     def advance(percent, stage):
         if progress: progress(percent, stage)
     advance(0, "Validating game files")
-    game = validate_game(game)
+    destination = validate_destination(destination, update)
+    if update:
+        validate_game(destination/'game')
+        check_replaceable([destination/name for name in REQUIRED])
+    game = validate_game(game or (destination/'game' if update else ''))
     if getattr(sys,'frozen',False) and sys.platform=='win32':
         import ctypes
         ctypes.windll.kernel32.SetDllDirectoryW(None)
     if font and not Path(font).is_file():
         raise ValueError('The optional FPS font file does not exist.')
-    destination = Path(destination).resolve()
-    if destination == game or destination.is_relative_to(game) or game.is_relative_to(destination):
+    embedded_input = update and game == destination/'game'
+    if not embedded_input and (destination == game or destination.is_relative_to(game) or game.is_relative_to(destination)):
         raise ValueError('Build folder and original game folder must be separate.')
     automatic = not local_settings and not llvm
     if automatic and not accept_license:
         raise ValueError('Accept the Microsoft build-tools license to download the required headers and SDK.')
     advance(1, 'Preparing project sources')
     emit('Preparing project sources')
-    if destination.exists() and any(destination.iterdir()):
-        raise ValueError('Choose a new or empty output folder.')
     workspace = Path(tempfile.mkdtemp(prefix='HappyWarsBuild-'))
     emit('Build workspace and logs: '+str(workspace))
     port = prepare_sources(workspace)
@@ -149,6 +138,7 @@ def compile_game(game, destination, llvm='', msvc='', font='', accept_license=Fa
                         advance(60 + 38 * int(counts[1]) / int(counts[2]),
                                 'Compiling game: '+counts[1]+'/'+counts[2])
                 if line.strip(): emit(line.rstrip())
+            process.stdout.close()
             if process.wait():
                 raise RuntimeError('Build step failed. See '+str(log_path)+'\n'+'\n'.join(recent))
     advance(15, 'Preparing Microsoft SDK and dependencies')
@@ -209,7 +199,7 @@ def compile_game(game, destination, llvm='', msvc='', font='', accept_license=Fa
             shutil.copy2(library,port/'build/game'/library.name)
     for name in ('ResetSaves.cmd', 'scripts/reset_saves.ps1'):
         shutil.copy2(port/name, port/'build/game'/Path(name).name)
-    executable = stage_runtime(port, destination)
+    executable = stage_runtime(port, destination, update=update)
     advance(100, 'Build complete')
     emit('Build complete: '+str(executable))
     return executable
@@ -235,28 +225,31 @@ def main():
             selected = filedialog.askopenfilename(parent=window, filetypes=[('Game font','*.bres')]) if key=='font' else filedialog.askdirectory(parent=window)
             if selected: fields[key].set(selected)
         ttk.Button(frame,text='Browse...',command=browse).grid(row=row,column=2,padx=(8,0))
+    update_existing=tk.BooleanVar(value=False)
+    ttk.Checkbutton(frame,text='Update existing build (preserve saves and mods)',
+        variable=update_existing).grid(row=2,columnspan=3,sticky='w',pady=6)
     consent=tk.BooleanVar(value=False)
     ttk.Checkbutton(frame,text='Accept Microsoft build-tools license',
-        variable=consent).grid(row=2,columnspan=2,sticky='w',pady=8)
+        variable=consent).grid(row=3,columnspan=2,sticky='w',pady=8)
     def license_terms():
         import webbrowser
         webbrowser.open('https://go.microsoft.com/fwlink/?LinkId=2179911')
-    ttk.Button(frame,text='License',command=license_terms).grid(row=2,column=2,padx=(8,0))
+    ttk.Button(frame,text='License',command=license_terms).grid(row=3,column=2,padx=(8,0))
     ttk.Label(frame,text='TU46 0.0.46.7 only. Build tools are downloaded automatically.\nGame content is never downloaded. Gameplay remains experimental.',
-        justify='left').grid(row=3,columnspan=3,sticky='w')
-    status=tk.StringVar(value='Select your game and an empty build folder.')
-    ttk.Label(frame,textvariable=status,wraplength=600).grid(row=4,columnspan=3,sticky='w',pady=10)
+        justify='left').grid(row=4,columnspan=3,sticky='w')
+    status=tk.StringVar(value='Select game files and an output folder, or update an existing build.')
+    ttk.Label(frame,textvariable=status,wraplength=600).grid(row=5,columnspan=3,sticky='w',pady=10)
     percentage=tk.DoubleVar(value=0)
     progress_text=tk.StringVar(value='0%')
     stage_text=tk.StringVar(value='Overall progress (estimated)')
     bar=ttk.Progressbar(frame,maximum=100,variable=percentage,mode='determinate')
-    bar.grid(row=5,column=0,columnspan=2,sticky='ew',pady=(0,6))
-    ttk.Label(frame,textvariable=progress_text).grid(row=5,column=2)
-    ttk.Label(frame,textvariable=stage_text).grid(row=6,columnspan=3,sticky='w',pady=(0,10))
+    bar.grid(row=6,column=0,columnspan=2,sticky='ew',pady=(0,6))
+    ttk.Label(frame,textvariable=progress_text).grid(row=6,column=2)
+    ttk.Label(frame,textvariable=stage_text).grid(row=7,columnspan=3,sticky='w',pady=(0,10))
     events=queue.Queue(); result={'path':None,'busy':False}
-    def worker(values,accepted):
+    def worker(values,accepted,updating):
         try:
-            path=compile_game(**values,accept_license=accepted,emit=lambda s:events.put(('status',s)),
+            path=compile_game(**values,accept_license=accepted,update=updating,emit=lambda s:events.put(('status',s)),
                 progress=lambda n,s:events.put(('progress',(n,s))))
             events.put(('done',path))
         except Exception as error: events.put(('error',str(error)))
@@ -264,7 +257,7 @@ def main():
         if result['busy']: return
         result['busy']=True; button.state(['disabled'])
         percentage.set(0); progress_text.set('0%'); open_button.state(['disabled'])
-        threading.Thread(target=worker,args=({k:v.get() for k,v in fields.items()},consent.get()),daemon=True).start()
+        threading.Thread(target=worker,args=({k:v.get() for k,v in fields.items()},consent.get(),update_existing.get()),daemon=True).start()
     def poll():
         try:
             while True:
@@ -288,16 +281,16 @@ def main():
         if result['busy']:
             messagebox.showinfo('Build running','Wait for the build to finish before closing.',parent=window)
         else: window.destroy()
-    button=ttk.Button(frame,text='Build',command=build); button.grid(row=7,column=2,sticky='e')
+    button=ttk.Button(frame,text='Build / Update',command=build); button.grid(row=8,column=2,sticky='e')
     open_button=ttk.Button(frame,text='Open game folder',command=lambda:os.startfile(result['path'].parent))
-    open_button.grid(row=7,column=0,columnspan=2,sticky='w'); open_button.state(['disabled'])
+    open_button.grid(row=8,column=0,columnspan=2,sticky='w'); open_button.state(['disabled'])
     window.protocol('WM_DELETE_WINDOW',close); window.after(100,poll)
     window.resizable(True,False)
     if self_test:
         window.update_idletasks()
         report = {'title':window.title(),'theme':style.theme_use(),
             'width':window.winfo_reqwidth(),'height':window.winfo_reqheight(),'inputs':list(fields),
-            'progress_maximum':float(bar['maximum']),'progress_mode':str(bar['mode']),
+            'update_supported':True,'progress_maximum':float(bar['maximum']),'progress_mode':str(bar['mode']),
             'bundled_sources':(Path(getattr(sys,'_MEIPASS',ROOT))/'source.zip').is_file()}
         output=Path(sys.argv[sys.argv.index('--self-test-report')+1])
         output.write_text(json.dumps(report,indent=2),encoding='utf-8')

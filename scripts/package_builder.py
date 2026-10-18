@@ -22,12 +22,14 @@ if __name__ == '__main__':
     if not output.is_relative_to((ROOT/'build').resolve()):
         raise SystemExit('Release staging must remain inside build/')
     output.mkdir(parents=True, exist_ok=True)
+    revision = subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     source = output/'source.zip'
     names = subprocess.check_output(['git','ls-files','-z'],cwd=ROOT).decode().split('\0')
     with zipfile.ZipFile(source,'w',zipfile.ZIP_DEFLATED) as archive:
         for name in sorted(filter(None,names)):
             data = subprocess.check_output(['git','show',':'+name],cwd=ROOT)
             archive.writestr(name,data)
+        archive.writestr('builder-source.json',json.dumps({'source_revision':revision,'version':'0.1'}))
     subprocess.run([sys.executable,'-m','PyInstaller','--noconfirm','--clean','--onefile',
         '--windowed','--name','HappyWarsBuilder','--add-data',str(source)+';.',
         '--distpath',str(output),'--workpath',str(ROOT/'build/pyinstaller'),
@@ -36,7 +38,7 @@ if __name__ == '__main__':
     revision = subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     manifest = {'source_revision':revision,'source_archive_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),
         'builder_sha256':hashlib.sha256(executable.read_bytes()).hexdigest(),
-        'scope':'Builder and project sources only; requires owned TU46 game files and an external toolchain.'}
+        'scope':'Builder and project sources only; requires owned TU46 game files; portable tools are prepared automatically.'}
     (output/'builder-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')
     (output/'SHA256SUMS.txt').write_text(manifest['builder_sha256']+'  HappyWarsBuilder.exe\n',encoding='utf-8')
     print(executable)
