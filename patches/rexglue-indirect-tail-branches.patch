@@ -1,0 +1,16 @@
+diff --git a/src/codegen/phase_gapfill.cpp b/src/codegen/phase_gapfill.cpp
+--- a/src/codegen/phase_gapfill.cpp
++++ b/src/codegen/phase_gapfill.cpp
+@@ -60,6 +60,12 @@
+     if (decoded.is_return()) {
+       shouldSplit = true;
+       reason = "blr";
++    } else if (raw == 0x4E800420u) {
++      // Canonical non-linking, unconditional bctr terminates a leaf just as
++      // blr does. bctrl must continue because it returns to the next word.
++      // CFG discovery and absorbed-gap cleanup still own internal switch blocks.
++      shouldSplit = true;
++      reason = "indirect tail branch";
+     } else if (decoded.opcode == Opcode::b && decoded.branch_target.has_value()) {
+       uint32_t target = decoded.branch_target.value();
+       // Don't split on tail recursion (branch to own segment start)

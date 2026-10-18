@@ -1,0 +1,240 @@
+# Verified real short tail-call entries; generated from local game data.
+[functions]
+0x822A0FF0 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD378 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD388 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD398 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD3A8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD3B8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD3C8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD3D8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD3E8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD3F8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD408 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD418 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD428 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD438 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD448 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD458 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD468 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD478 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD488 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD498 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD4A8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD4B8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD4C8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD4D8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD4E8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD4F8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD508 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD518 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD528 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD538 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD548 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD558 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD568 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD578 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD588 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD598 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD5A8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD5B8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD5C8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD5D8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD5E8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD5F8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD608 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD618 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD628 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD638 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD648 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD658 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD668 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD720 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD730 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD740 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD750 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD760 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD770 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD780 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x822AD790 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82606E58 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x826E2690 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x827A14C0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x827a15e8
+0x82A30460 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82B67940 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82B8BD20 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82BE1BF0 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82BE1C00 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82BE1C10 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82BE1C20 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82BE1C30 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82BE1C40 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82BE1C50 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82BE1C60 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82BE1C70 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82BE1C80 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82BE1C90 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82BE1CA0 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82BE1CB0 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82BE1CC0 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82BE1CD0 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82C35038 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x82bd79b8
+0x82C3DD30 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82C3DD40 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82C3DD50 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82C4F590 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82C4F5A0 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82C4FE10 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83383a48
+0x82C50510 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82CB61F8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82CC0558 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x82cc0830
+0x82D081E0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x82d09d68
+0x82D1D0A0 = { size = 8, share_registers = true } # li rN,imm; b -> 0x82d1b380
+0x82DBF370 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x82dc1630
+0x82E6E968 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82E6E978 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82E6F030 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82E6F040 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82E6F060 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82E6F070 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x82E81960 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x83036250 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x83036260 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x83036270 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x83036280 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x83036290 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x830362A0 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x830362B0 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x8303A730 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x8303A740 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x8303A750 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x8303A760 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x8303A770 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x8303A780 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x8303A790 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x8303A7A0 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x830518C8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8304dc50
+0x83057F50 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83057df8
+0x83057F58 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83057e40
+0x83057F60 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83057df0
+0x83057F68 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83057dd0
+0x83057F70 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83057e10
+0x83057F78 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83057de8
+0x83057F80 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83057de0
+0x83057F88 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x830580b8
+0x83057F98 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83057e28
+0x83057FA0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83057e20
+0x83057FA8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83057e48
+0x83057FB0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83057dd8
+0x83057FB8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83057e08
+0x83057FC0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83057e00
+0x83057FC8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83057e38
+0x83058030 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x830564e0
+0x8305EDEC = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x8305EE28 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x8305EEE4 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x8305F6F8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f6a8
+0x8305F700 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f640
+0x8305F708 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f628
+0x8305F710 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f670
+0x8305F718 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f668
+0x8305F720 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f638
+0x8305F728 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f900
+0x8305F738 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f690
+0x8305F740 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f6b0
+0x8305F748 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f688
+0x8305F750 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f680
+0x8305F758 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f630
+0x8305F760 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f658
+0x8305F768 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f660
+0x8305F770 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f620
+0x8305F778 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f650
+0x8305F780 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f648
+0x8305F788 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8305f6a0
+0x83061348 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x830612b8
+0x83061350 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83061288
+0x83061358 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83061538
+0x83061368 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x830612c0
+0x83061370 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x830612d8
+0x83061378 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x830612e0
+0x83061380 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83061300
+0x83061388 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83061280
+0x83061390 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x830612d0
+0x83061398 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x830612a8
+0x830613A0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x830612b0
+0x830613A8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83061270
+0x830613B0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x830612a0
+0x830613B8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x830612f0
+0x830613C0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x830612e8
+0x830613C8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x830612f8
+0x830613D0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83061298
+0x830613D8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83061290
+0x83068448 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83066a68
+0x830692E8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83069248
+0x830692F0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83069088
+0x830697E8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83069388
+0x8306CA28 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8306c620
+0x8306DEA0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8306dd40
+0x83085CC0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83085be0
+0x83086480 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83086098
+0x83086490 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x830862c0
+0x83088358 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x830881e8
+0x83088368 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83088170
+0x83088380 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83088140
+0x83088388 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83088150
+0x83088390 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83088260
+0x830D4420 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x83198274 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x831A93D0 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x831A93E0 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x831A93F0 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x831A9CD0 = { size = 4, share_registers = true } # b -> 0x831bd7f0
+0x831A9D18 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x831A9D28 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x831A9D38 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x831A9D48 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x831A9D58 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x831A9D68 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x831A9D78 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x831A9D88 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x831A9D98 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x831A9DA8 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x83283498 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83282a30
+0x832834A0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83282c70
+0x832834A8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83283310
+0x832834B0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83282a08
+0x832834B8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83282c48
+0x83284E38 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83284db8
+0x83286DC8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83286080
+0x83286DD0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83285fc0
+0x83286DD8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83285f98
+0x83286DE0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83286058
+0x83286DE8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x83285f98
+0x8328BA10 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x8328b990
+0x83291614 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x832A0FD8 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x832b6330
+0x832A0FE0 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x832b61d0
+0x832ACC18 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x832ac970
+0x832ACC20 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x832ac970
+0x832ACC28 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x832ac948
+0x832ACC30 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x832ac948
+0x832ACC38 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x832ac948
+0x832AF178 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x832ae8b8
+0x832AF180 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x832ae700
+0x832AF188 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x832ae6d8
+0x832AF190 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x832ae6d8
+0x832AF198 = { size = 8, share_registers = true } # addi r3,r3,imm; b -> 0x832ae8e0
+0x83362430 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x83362440 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x83362450 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x83362460 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x83362470 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x83362480 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x83362490 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x833624A0 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x833624B0 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x833AA528 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x833AA548 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x833AA56C = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x833C8778 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)
+0x833C8788 = { size = 16, share_registers = true } # lwz; lwz; mtctr; bctr -> ctr (virtual dispatch)

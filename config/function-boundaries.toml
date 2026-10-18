@@ -1,0 +1,26 @@
+# Evidence: logs/branch-boundaries.json and branch-disassembly.log.
+# These entries add real code omitted by automatic discovery; no instruction is patched.
+[functions]
+0x82BA52B8 = { size = 0x14, share_registers = true } # Real closure adapter: lwz r11,0(r3); lwz r4,8(r3); lwz r3,4(r3); mtctr r11; bctr. Follows exception-throw call, ends before padding 0x82BA52CC.
+0x8306A080 = { size = 4 } # Single unconditional branch to 0x83069300.
+0x8306BCF8 = { size = 4 } # Single unconditional branch to 0x83069300.
+0x8306D030 = { size = 4 } # Single unconditional branch to 0x83069300.
+0x82E0AE08 = { size = 0x70 } # Leaf routine; all paths end at/before blr 0x82E0AE74.
+0x8305EE38 = { size = 0x44 } # Leaf with shared return block at 0x8305EE44 and bctr at 0x8305EE78.
+0x833F7440 = { size = 0x3C } # Leaf with shared error return at 0x833F7448; blr at 0x833F7478.
+0x83393258 = { size = 0x10, share_registers = true } # Indirect runtime target: cmpwi, bnelr, tail branch, blr; ends before metadata at 0x83393268.
+0x8342DA20 = { size = 0x88 } # Indirect comparator observed during boot; leaf ends at blr 0x8342DAA4.
+0x830613E0 = { size = 0x100 } # Indirect audio-thread target observed at boot; leaf with virtual tail calls, final blr 0x830614DC.
+0x83066CA0 = { size = 0x18 } # Indirect main-thread target observed at boot; six instructions ending in virtual tail call bctr at 0x83066CB4.
+# Referenced virtual dispatch adapters: eight straight-line instructions each,
+# ending in bctr. Complete original bodies inspected in logs/virtual-adapters-disassembly.log.
+0x8327D0E8 = { size = 0x20, share_registers = true }
+0x8327D108 = { size = 0x20, share_registers = true } # Actual fatal target after the 98-thunk fix.
+0x8327D128 = { size = 0x20, share_registers = true }
+0x8327D148 = { size = 0x20, share_registers = true }
+0x8327D168 = { size = 0x20, share_registers = true }
+0x8327D188 = { size = 0x20, share_registers = true }
+0x8327D1A8 = { size = 0x20, share_registers = true }
+0x83329250 = { size = 0x10, share_registers = true } # Observed indirect target: two loads, mtctr, bctr. Original body in logs/four-instruction-adapters-disassembly.log.
+0x82B67950 = { size = 0x1C, share_registers = true } # Indexed tail-call dispatcher; base 0x820BAF2C, entries 0x82B67940 and 0x82B67930 already registered. Ends at bctr 0x82B67968.
+0x830FBEB8 = { size = 0x188 } # Leaf with 18-entry in-text jump table at 0x830FBEEC; all cases end by blr 0x830FC03C. Full body before 0x830FC040; logs/indirect-split-boundary-disassembly.log.

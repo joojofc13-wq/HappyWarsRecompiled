@@ -1,0 +1,18 @@
+diff --git a/vsdownload.py b/vsdownload.py
+index 3085426..b850edb 100755
+--- a/vsdownload.py
++++ b/vsdownload.py
+@@ -791,7 +791,12 @@ def unpackWin10SDK(src, payloads, dest):
+ 
+     for payload in payloads:
+         name = getPayloadName(payload)
+-        if name.endswith(".msi"):
++        if name.endswith(".msi") and name.startswith((
++            "Windows SDK Desktop Headers x64", "Windows SDK Desktop Libs x64",
++            "Windows SDK Desktop Tools x64", "Windows SDK for Windows Store Apps Headers-",
++            "Windows SDK for Windows Store Apps Headers OnecoreUap-",
++            "Windows SDK for Windows Store Apps Libs-", "Windows SDK for Windows Store Apps Tools-",
++            "Universal CRT Headers Libraries and Sources")):
+             print("Extracting " + name)
+             srcfile = os.path.join(src, name)
+             if sys.platform == "win32":

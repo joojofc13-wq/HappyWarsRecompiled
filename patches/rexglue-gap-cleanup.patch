@@ -1,0 +1,187 @@
+diff --git a/include/rex/codegen/function_graph.h b/include/rex/codegen/function_graph.h
+index c64271b..ce7bd9e 100644
+--- a/include/rex/codegen/function_graph.h
++++ b/include/rex/codegen/function_graph.h
+@@ -198,6 +198,9 @@ class FunctionGraph {
+   std::unordered_map<uint32_t, bool> functionHasXrefs_;  // entry -> hasXrefs
+   std::vector<std::pair<uint32_t, uint32_t>> chunks_;    // base, size pairs
+   MemoryReader memoryReader_;
++  // Target entry -> callers with unresolved jumps. Stale caller entries are
++  // harmless and checked before notification (callers can be replaced/removed).
++  std::unordered_map<uint32_t, std::unordered_set<uint32_t>> unresolvedWaiters_;
+ 
+   // Notify all PENDING functions that a new function was added
+   void notifyFunctionAdded(FunctionNode* newFunction);
+diff --git a/src/codegen/function_graph.cpp b/src/codegen/function_graph.cpp
+index fc918bb..6aa5ce2 100644
+--- a/src/codegen/function_graph.cpp
++++ b/src/codegen/function_graph.cpp
+@@ -963,6 +963,7 @@ void FunctionGraph::addUnresolvedJumpToFunction(uint32_t entry, uint32_t site, u
+ 
+   // Not resolvable yet - add as unresolved
+   node->addUnresolvedJump(site, target, isCall, conditional);
++  unresolvedWaiters_[target].insert(entry);
+   REXCODEGEN_TRACE("FunctionGraph: added unresolved {} 0x{:08X}->0x{:08X} to function 0x{:08X}",
+                    isCall ? "call" : "jump", site, target, entry);
+ }
+@@ -1284,11 +1285,14 @@ TargetKind FunctionGraph::classifyTarget(uint32_t target, uint32_t callerAddr,
+ }
+ 
+ void FunctionGraph::notifyFunctionAdded(FunctionNode* newFunction) {
+-  for (auto& [base, node] : functions_) {
+-    if (node.get() != newFunction && node->isPending()) {
++  auto waiters = unresolvedWaiters_.find(newFunction->base());
++  if (waiters == unresolvedWaiters_.end()) return;
++  for (uint32_t caller : waiters->second) {
++    auto* node = getFunction(caller);
++    if (node && node != newFunction && node->isPending())
+       node->tryResolveAgainst(newFunction);
+-    }
+   }
++  unresolvedWaiters_.erase(waiters);
+ }
+ 
+ }  // namespace rex::codegen
+diff --git a/src/codegen/gap_cleanup.h b/src/codegen/gap_cleanup.h
+new file mode 100644
+index 0000000..889ec58
+--- /dev/null
++++ b/src/codegen/gap_cleanup.h
+@@ -0,0 +1,30 @@
++// SPDX-License-Identifier: BSD-3-Clause
++// Range-indexed equivalent of cleanupAbsorbedGapFills' all-pairs query.
++#pragma once
++#include <algorithm>
++#include <set>
++#include <vector>
++#include <rex/codegen/function_graph.h>
++
++namespace rex::codegen {
++inline std::vector<uint32_t> FindAbsorbedGapFills(const FunctionGraph& graph) {
++  std::vector<uint32_t> gaps;
++  for (const auto& [address,node] : graph.functions())
++    if (node->authority()==FunctionAuthority::GAP_FILL) gaps.push_back(address);
++  std::sort(gaps.begin(),gaps.end());
++  std::set<uint32_t> removed;
++  for (const auto& [otherAddress,other] : graph.functions()) {
++    const uint32_t end=other->end();
++    if (end<=otherAddress) continue;
++    auto it=std::lower_bound(gaps.begin(),gaps.end(),otherAddress);
++    const auto last=std::lower_bound(gaps.begin(),gaps.end(),end);
++    for (;it!=last;++it) {
++      const uint32_t address=*it;
++      if (address==otherAddress) continue;
++      if (other->authority()==FunctionAuthority::GAP_FILL && otherAddress>=address) continue;
++      if (other->containsAddress(address)) removed.insert(address);
++    }
++  }
++  return {removed.begin(),removed.end()};
++}
++}
+diff --git a/src/codegen/phase_gapfill.cpp b/src/codegen/phase_gapfill.cpp
+index f3da777..b5a8ed0 100644
+--- a/src/codegen/phase_gapfill.cpp
++++ b/src/codegen/phase_gapfill.cpp
+@@ -10,6 +10,7 @@
+  */
+ 
+ #include "ppc/instruction.h"
++#include "gap_cleanup.h"
+ 
+ #include <unordered_set>
+ 
+@@ -159,6 +160,8 @@ void gapFillCodeRegions(CodegenContext& ctx) {
+       REXCODEGEN_TRACE("GapFill: registered sub_{:08X} (0x{:08X}-0x{:08X}, {} bytes)",
+                        segment.start, segment.start, segment.end, segmentSize);
+       segmentsCreated++;
++      if (segmentsCreated % 10000 == 0)
++        REXLOG_INFO("GapFill: registered {} segments ({} functions)", segmentsCreated, graph.functionCount());
+     }
+ 
+     gapsFound++;
+@@ -178,30 +181,7 @@ void gapFillCodeRegions(CodegenContext& ctx) {
+ 
+ void cleanupAbsorbedGapFills(CodegenContext& ctx) {
+   auto& graph = ctx.graph;
+-  std::vector<uint32_t> toRemove;
+-
+-  for (const auto& [addr, node] : graph.functions()) {
+-    if (node->authority() != FunctionAuthority::GAP_FILL)
+-      continue;
+-
+-    for (const auto& [otherAddr, otherNode] : graph.functions()) {
+-      if (otherAddr == addr)
+-        continue;
+-      if (!otherNode->containsAddress(addr))
+-        continue;
+-
+-      // This GAP_FILL is inside another function's blocks
+-      if (otherNode->authority() != FunctionAuthority::GAP_FILL) {
+-        // Absorbed by higher authority - remove
+-        toRemove.push_back(addr);
+-        break;
+-      } else if (otherAddr < addr) {
+-        // Both GAP_FILL, other has lower address - it survives
+-        toRemove.push_back(addr);
+-        break;
+-      }
+-    }
+-  }
++  const auto toRemove = FindAbsorbedGapFills(graph);
+ 
+   for (uint32_t addr : toRemove) {
+     graph.removeFunction(addr);
+@@ -218,14 +198,18 @@ namespace phases {
+ 
+ VoidResult GapFill(CodegenContext& ctx, ProgressReporter* reporter) {
+   (void)reporter;
++  REXLOG_INFO("GapFill: registering uncovered regions ({} functions)", ctx.graph.functionCount());
+   gapFillCodeRegions(ctx);
++  REXLOG_INFO("GapFill: discovering blocks ({} functions)", ctx.graph.functionCount());
+ 
+   // Discover blocks for gap-filled functions
+   auto known = buildKnownFunctions(ctx.graph, /*excludeGapFill=*/true);
+   size_t discovered = discoverPendingFunctions(ctx, known);
++  REXLOG_INFO("GapFill: cleaning absorbed functions ({} discovered)", discovered);
+   REXCODEGEN_TRACE("Analyze: discovered blocks for {} gap-filled functions", discovered);
+ 
+   cleanupAbsorbedGapFills(ctx);
++  REXLOG_INFO("GapFill: complete ({} functions)", ctx.graph.functionCount());
+ 
+   return Ok();
+ }
+diff --git a/src/codegen/phase_register.cpp b/src/codegen/phase_register.cpp
+index 7d1fa44..526f60a 100644
+--- a/src/codegen/phase_register.cpp
++++ b/src/codegen/phase_register.cpp
+@@ -588,6 +588,15 @@ VoidResult registerEntryPoints(CodegenContext& ctx) {
+   size_t count = pdataSize / sizeof(IMAGE_CE_RUNTIME_FUNCTION);
+   auto* entries = reinterpret_cast<const IMAGE_CE_RUNTIME_FUNCTION*>(pdataData);
+ 
++  // A separately registered PDATA function is a hard boundary. Exception
++  // metadata may refer to its funclet, but that does not make the funclet's
++  // instruction bytes part of the parent's body.
++  std::vector<uint32_t> pdataStarts;
++  pdataStarts.reserve(count);
++  for (size_t i = 0; i < count; ++i)
++    pdataStarts.push_back(byte_swap(entries[i].BeginAddress));
++  std::sort(pdataStarts.begin(), pdataStarts.end());
++
+   size_t pdataAdded = 0;
+   for (size_t i = 0; i < count; i++) {
+     uint32_t beginAddr = byte_swap(entries[i].BeginAddress);
+@@ -614,7 +623,13 @@ VoidResult registerEntryPoints(CodegenContext& ctx) {
+       exInfo = parseExceptionInfo(binary, beginAddr);
+       if (exInfo) {
+         if (exInfo->maxAddress > beginAddr + size) {
+-          size = exInfo->maxAddress - beginAddr + 4;
++          auto next = std::upper_bound(pdataStarts.begin(), pdataStarts.end(), beginAddr);
++          if (next == pdataStarts.end() || exInfo->maxAddress < *next) {
++            size = exInfo->maxAddress - beginAddr + 4;
++          } else {
++            REXLOG_WARN("PDATA: preserving 0x{:08X}-0x{:08X}; exception metadata refers across separate function 0x{:08X}",
++                        beginAddr, beginAddr + size, *next);
++          }
+         }
+         state.invalidInstructions[beginAddr - 8] = 8;
+ 
