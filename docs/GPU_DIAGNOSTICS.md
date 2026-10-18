@@ -27,3 +27,21 @@ See Microsoft's [DRED allocation output](https://learn.microsoft.com/en-us/windo
 Each session manifest records these settings alongside the executable hash.
 Removing the file restores SDK defaults. Existing logs are retained for
 comparison. Sustained gameplay must be tested before reporting a fix.
+
+## Queue-operation fence correction
+
+The pinned backend wrapped a logical AND in SUCCEEDED instead of checking the
+HRESULT returned by each API separately. With S_OK (zero) from Signal, the old
+condition skipped SetEventOnCompletion and still entered the wait. Failure
+HRESULTs could also enter that branch after boolean conversion.
+
+`patches/rexglue-queue-fence-order.patch` checks Signal first, then registers the
+event only on success, and waits only if both calls succeeded. A local compiled
+regression compared the exact old and corrected conditions with successful and
+failed HRESULT values: the old expression failed and the corrected one passed.
+The diagnostic log records when this path is exercised. Whether this defect
+causes the observed gameplay GPU fault still requires a matching playtest.
+
+The named-allocation trial faulted at `0x0000000343E00000`, outside the logged
+shared-memory and EDRAM buffer ranges. DRED returned no matching live or recently
+freed allocations. This does not establish a resource-lifetime bug by itself.
