@@ -1,105 +1,100 @@
-# Happy Wars Recompiled — trabalho de preservação
+<p align="center">
+  <img src="assets/happy-wars-cover.png" alt="Happy Wars" width="360">
+</p>
 
-Projeto real iniciado em 17/10/2026 para Windows x64, com recompilação estática
-PowerPC → C++ usando ReXGlue. **Ainda não é um port jogável.** Consulte STATUS.md
-antes de interpretar qualquer build ou teste como execução do jogo.
+# Happy Wars Recompiled
 
-Um protótipo nativo já foi compilado em `build/game/HappyWars.exe`. O usuário
-confirmou intro e tela de título em 3D; o avanço ainda depende da substituição
-das verificações de perfil e dos serviços online por implementações locais.
-O build usa `-O1`; ainda não há medição de FPS. Não usa JIT de PowerPC:
-o código PowerPC foi convertido antes do build.
+An unofficial native Windows x64 port of the Xbox 360 version of Happy Wars, built through static PowerPC recompilation with ReXGlue.
 
-O pacote original do usuário foi localizado em Downloads, identificado como
-LIVE pelo cabeçalho e extraído em `private/game/`. Não é necessário baixar o jogo.
-Todos os recursos proprietários, imagens de memória e código traduzido permanecem
-locais. Não publique `private/`, `generated/default/`, saves ou binários do jogo.
+The goal is offline Skirmish with the original bots, maps, equipment, Happy Cards and persistent progression. You must provide files from your own copy of the game.
 
-## Executar as ferramentas neste computador
+**Work in progress:** the build renders the intro and 3D title screen. Local profile and storage services are under development. The mode menu and gameplay are not working yet.
 
-Abra PowerShell na pasta deste README. Python 3.14 está instalado.
-`config/local-tools.json` aponta para as dependências já preparadas no computador.
+[Latest prerelease](https://github.com/joojofc13-wq/HappyWarsRecompiled/releases/latest) · [Project status](STATUS.md) · [Build guide](docs/BUILDING.md)
 
-```powershell
-py scripts/extract.py "C:\caminho\para\seu\pacote-LIVE"
-py scripts/analyze.py
-py scripts/resources.py
-py scripts/data_audit.py
-py -m unittest discover -s tests -p test_tools.py -v
-py scripts/build.py
-```
+## Table of Contents
 
-`build.py` compila e testa somente o backend de armazenamento por padrão. O teste
-é um programa de verificação sem menu, combate ou simulação do Happy Wars.
+- [Requirements](#requirements)
+- [How to Run](#how-to-run)
+- [Implemented Features](#implemented-features)
+- [Roadmap](#roadmap)
+- [Known Issues](#known-issues)
+- [FAQ](#faq)
+- [Building](#building)
+- [Credits](#credits)
 
-Para gerar o código do jogo e tentar seu build:
+## Requirements
 
-```powershell
-py scripts/recompile.py
-py scripts/audit_labels.py
-py scripts/audit_codegen.py
-py scripts/prepare_blr_callbacks.py
-py scripts/build.py --game --opt-level 1 --jobs 2
-```
+Development currently targets Windows x64 and a Direct3D 12 GPU supported by the pinned ReXGlue Xenos backend. Minimum hardware and performance requirements have not been measured.
 
-Depois da geração, os testes das rotinas traduzidas podem ser preparados e
-executados separadamente:
+Building requires Python, Git, Clang, MSVC headers and libraries, the Windows SDK, and your own Happy Wars Xbox 360 package. See the [tested toolchain](docs/TOOLCHAIN.md).
 
-```powershell
-py scripts/prepare_translation_test.py
-py scripts/prepare_thunk_test.py
-py scripts/prepare_indexed_dispatch_test.py
-py scripts/build.py --translation-test
-```
+## How to Run
 
-Não execute dois geradores sobre a mesma pasta de saída. O gerador normal não usa
-`--force`. Verifique o resultado e os erros antes de compilar ou executar.
-Depois de alterar o próprio gerador, use `py scripts/recompile.py --regenerate`:
-isso invalida o cache e continua exigindo que a validação passe.
+There is no ready-to-play installer yet. The prerelease contains source code and patches.
 
-O build também prepara automaticamente a lista de callbacks originais que
-consistem exatamente em uma instrução `blr`. A lista é derivada da imagem local,
-e o opcode é conferido novamente no boot. Essa tradução estática preserva os
-registradores; não substitui funções ausentes por retornos de sucesso.
+After following the [build guide](docs/BUILDING.md), double-click **LaunchHappyWars.cmd** in the project folder. It supplies the game, save and cache paths required by the executable.
 
-O CLI oficial criou `happywars_manifest.toml`, `src/main.cpp`,
-`src/happywars_app.h` e `generated/rexglue.cmake`. O alvo real de jogo terá o nome
-`HappyWars.exe` quando houver tradução e link bem-sucedidos.
+Keyboard controls: Enter for Start, Space for A, Backspace for B, and WASD for the left stick. The SDK also supports controllers through SDL.
 
-## Preparação em outro ambiente Windows
+## Implemented Features
 
-São necessários Python, Git, LLVM/Clang e headers/bibliotecas MSVC/Windows SDK.
-O compilador deve usar a ABI MSVC para vincular ao SDK oficial; a ABI GNU padrão
-do LLVM-MinGW não é compatível com as interfaces C++ desse pacote.
+- Native Windows x64 executable from statically translated PowerPC code.
+- Intro and 3D title rendering through the Xenos backend.
+- Virtual local LIVE profile that passes the account check.
+- In-process HTTP transport and SQLite storage with binary payload tests.
+- Repeatable extraction, integrity checks, code generation and build scripts.
 
-```powershell
-py scripts/install_msvc.py --accept-license
-py scripts/setup.py --llvm-bin "C:\caminho\llvm\bin" --msvc tools/msvc --diagnostic-source
-py scripts/build_diagnostic.py
-py scripts/build.py
-```
+Storage tests pass, but complete in-game save loading remains unfinished.
 
-O instalador MSVC usa downloads oficiais da Microsoft por meio do projeto
-msvc-wine, mantidos locais. O SDK ReXGlue é fixado por versão e SHA-256 em
-`config/upstream-lock.json`; CMake e Ninja também têm versões fixadas.
-O LLVM utilizado nesta execução foi Clang 23.1.3 de uma instalação LLVM-MinGW
-já disponível. A instalação de uma nova distribuição LLVM não é automatizada.
+## Roadmap
 
-## Conteúdo
+- [x] Extract and inspect the original game package.
+- [x] Compile a native executable and render the title.
+- [x] Pass the original account check with a local profile.
+- [ ] Load or create valid player data and reach the mode menu.
+- [ ] Start and complete Skirmish with the original bots.
+- [ ] Preserve equipment, upgrades, rewards and Happy Cards between sessions.
+- [ ] Validate available maps and modes.
+- [ ] Measure and improve performance.
+- [ ] Provide a builder for owners to compile their own copies.
 
-- `scripts/`: extração validada, leitura XEX/PE, ZRES, auditoria e builds.
-- `runtime/`, `include/`: backend SQLite C++ com transações e backup.
-- `src/`: aplicação real criada pelo SDK; sem interfaces fictícias.
-- `patches/`: alterações isoladas nas ferramentas, com testes e justificativas.
-- `docs/`: evidências técnicas, pesquisa das ferramentas e plano offline.
-- `logs/`: resultados reais; incluem falhas e suas correções.
-- `private/`: arquivos originais e derivados locais; fora do Git.
+## Known Issues
 
-O backend de save armazena bytes completos e versões de codec. **O codec e os
-hooks do inventário original ainda precisam ser implementados e testados no
-jogo.** Os testes do backend não demonstram persistência de equipamentos no jogo.
+Startup is still unstable. The latest local-service build reaches storage reads and writes, then encounters a guest access violation. The mode menu and a playable match have not been confirmed. Intro performance is poor, and no FPS improvement has been measured.
 
-As chamadas de socket e partes de XHTTP têm guards locais para o teste offline:
-retornam erro, não sucesso fictício. Esses guards não implementam perfil,
-inventário, recompensas ou inicialização de partidas. O teste limitado de boot é
-`py scripts/runtime_smoke.py --seconds 20`; os resultados ficam em logs/.
+See [STATUS.md](STATUS.md) for validation and [save-service analysis](docs/SAVE_SERVICE_ANALYSIS.md) for the current investigation.
+
+## FAQ
+
+**Is this a Xenia launcher?**
+
+No. The game CPU code is translated to C++ ahead of time and compiled for Windows x64. The port uses ReXGlue runtime components and its Xenos GPU backend.
+
+**Does it require Xbox Live?**
+
+The target is fully local play. The current code uses a synthetic profile and an in-process service, with no real account credentials.
+
+**Are all maps and modes unlocked?**
+
+Not yet. Resources and mode identifiers have been found, but their playable flows still need implementation and testing.
+
+**Will I need my own game files?**
+
+Yes. Original game files and translated game code are excluded from this repository. The cover above was supplied for the project page.
+
+## Building
+
+Follow [Building from Source](docs/BUILDING.md). Dependency revisions and hashes are pinned in `config/upstream-lock.json`.
+
+Technical references: [executable analysis](docs/TECHNICAL_ANALYSIS.md), [native boot](docs/BOOT.md), [offline services](docs/OFFLINE.md), [function discovery](docs/FUNCTION_DISCOVERY.md), [account handling](docs/XENIA_NETPLAY.md) and [release policy](docs/RELEASES.md).
+
+## Credits
+
+- [ReXGlue](https://github.com/rexglue/rexglue-sdk) for the recompilation pipeline and runtime.
+- [Xenia](https://github.com/xenia-project/xenia) and [Xenia Netplay](https://github.com/Nexia360/xenia-canary) for implementation references.
+- [XenonRecomp](https://github.com/hedge-dev/XenonRecomp) for static recompilation references.
+- [Extract-STFS](https://github.com/jasonulbright/Extract-STFS) for package extraction.
+- [Unleashed Recompiled](https://github.com/hedge-dev/UnleashedRecomp) for project structure, presentation and release references.
+
+Happy Wars belongs to its respective rights holders. Third-party notices are included with the relevant tools and patches.

@@ -15,7 +15,12 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 add_library(offline_store runtime/offline_store.cpp)
 target_include_directories(offline_store PUBLIC include)
 target_link_libraries(offline_store PUBLIC winsqlite3)
+add_library(local_title_storage runtime/local_title_storage.cpp)
+target_link_libraries(local_title_storage PUBLIC offline_store)
 if(BUILD_TESTING)
+    add_executable(local_title_storage_test tests/local_title_storage_test.cpp)
+    target_link_libraries(local_title_storage_test PRIVATE local_title_storage)
+    add_test(NAME local_title_storage COMMAND local_title_storage_test ${CMAKE_CURRENT_BINARY_DIR}/title-storage-test.sqlite)
     add_executable(store_test tests/store_test.cpp)
     target_link_libraries(store_test PRIVATE offline_store)
     add_test(NAME store_process_restart COMMAND ${Python3_EXECUTABLE}
@@ -59,6 +64,14 @@ if(HAPPYWARS_TEST_TRANSLATION)
     target_link_libraries(offline_auth_test PRIVATE rex::runtime)
     rexglue_apply_target_settings(offline_auth_test)
     add_test(NAME offline_auth COMMAND offline_auth_test)
+    add_executable(local_service_directory_test tests/local_service_directory_test.cpp runtime/local_service_directory.cpp)
+    target_link_libraries(local_service_directory_test PRIVATE rex::runtime)
+    rexglue_apply_target_settings(local_service_directory_test)
+    add_test(NAME local_service_directory COMMAND local_service_directory_test)
+    add_executable(local_http_test tests/local_http_test.cpp runtime/local_http.cpp runtime/local_http_uri.cpp)
+    target_link_libraries(local_http_test PRIVATE rex::runtime local_title_storage)
+    rexglue_apply_target_settings(local_http_test)
+    add_test(NAME local_http COMMAND local_http_test ${CMAKE_CURRENT_BINARY_DIR}/http-storage-test.sqlite)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/private/tests/translated_indexed_dispatch.cpp")
         add_executable(translated_indexed_dispatch_test tests/translated_indexed_dispatch_test.cpp private/tests/translated_indexed_dispatch.cpp)
         target_include_directories(translated_indexed_dispatch_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -95,6 +108,9 @@ set(HAPPYWARS_SOURCES
     runtime/offline_profile.cpp
     runtime/boot_diagnostics.cpp
     runtime/offline_auth.cpp
+    runtime/local_service_directory.cpp
+    runtime/local_http.cpp
+    runtime/local_http_uri.cpp
     runtime/verified_callbacks.cpp
     runtime/function_registration.cpp
 )
@@ -106,6 +122,7 @@ else()
 endif()
 
 rexglue_setup_target(happywars GPU_PLUGINS xenos)
+target_link_libraries(happywars PRIVATE local_title_storage)
 add_custom_target(happywars_aot_preflight
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/validate_translation.py
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/verify_registration.py

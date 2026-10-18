@@ -1,68 +1,31 @@
-# Caminho para Skirmish e modos locais
+# Offline services and progression
 
-O pedido adicional de 17/10 inclui fazer o jogo funcionar com respostas locais,
-desbloquear mapas e investigar todos os modos. O escopo viável depende dos
-recursos e caminhos presentes nesta versão de 2012. Não se presume que contenha
-mapas, modos ou conteúdo de atualizações posteriores ausentes dos arquivos.
+The target is local play with the original combat, bots, maps and progression. No external backend is required by the design. Only content present in the user's copy can be supported.
 
-## Evidência atual
+## Local identity
 
-Existem recursos de bots, classes e mapas; tabelas de progressão com parâmetros
-offline; identificadores de modos offline; código de menu/tutorial/campanha em
-Squirrel; parâmetros e definições extensas de itens. Isso favorece reutilizar
-comportamentos locais originais. Nenhuma partida foi executada para comprová-los.
+The XAM replacements expose one synthetic LIVE profile with coherent sign-in state, XUIDs, name, membership tier and privileges. They use no real account or credentials. The original account gate has been passed in an interactive run.
 
-Também existem referências a Sentient, bibliotecas XAUTH/XHTTP/XONLINE e imports
-de comunicação cujas implementações no SDK são stubs. Responder sucesso a toda
-chamada não garante um objeto de perfil válido nem uma partida inicializada.
+## Storage service
 
-O protótipo inclui `offline_network_guard.cpp`, que substitui entradas de socket,
-connect, send/sendto, accept e XHTTP selecionadas por falhas explícitas, com
-WSAENETDOWN. Os testes do ABI passaram e os símbolos substituídos não constam
-como imports de DLL no executável. Isso permite investigar falhas de boot sem
-fornecer respostas fictícias de servidores. Não é um adaptador funcional do
-backend do Happy Wars e não demonstra funcionamento com a rede física desligada.
+The port dispatches selected XHTTP requests in process. The local endpoint does not bind a TCP port or perform DNS. Title-storage routes use SQLite to preserve opaque binary payloads from the game.
 
-## Integração proposta, ainda não implementada
+The route and HTTP ABI tests verify binary reads and writes, slot isolation, restart, replacement, deletion, invalid routes and backup replacement. The original game has not yet created and restored a valid player through this service. Metadata field selection has been traced, but complete parser compatibility remains unverified.
 
-1. Obter boot e rastreamento do menu. Registrar as transições e chamadas que
-   impedem criar um perfil local e selecionar Skirmish.
-2. Localizar a fronteira do serviço do jogo em processo. Investigar requisições,
-   callbacks assíncronos, tamanhos e layouts por caminhos de código observáveis.
-3. Fornecer identidade estritamente local e respostas locais somente para os
-   contratos necessários. Não acessar contas, autenticação ou servidores ativos.
-4. Reutilizar os objetos e validadores originais para instanciar equipamentos,
-   atributos, buffs, upgrades e seleções. Manter IDs e referências consistentes.
-5. Serializar esses objetos completos em snapshots versionados no SQLite e
-   restaurá-los antes de o menu consultar perfil/inventário. Testar item a item
-   dentro do jogo; uma lista de nomes não satisfaz esse requisito.
-6. Identificar a criação original de partida, escolher recursos presentes,
-   inicializar times e IA original, encerrar partida e aplicar recompensas locais.
-7. Ampliar o desbloqueio para mapas/modos presentes e compatíveis com jogadores
-   locais/bots, depois de cada fluxo funcionar. Testar as condições de vitória.
+See [save-service analysis](SAVE_SERVICE_ANALYSIS.md) for endpoint, token, URL, header and callback contracts.
 
-## Backend de armazenamento implementado
+## SQLite backend
 
-`OfflineStore` usa SQLite do Windows e schema 1. Um perfil local aleatório é
-criado na primeira abertura. Cada record contém chave, versão do codec e BLOB;
-o BLOB preserva bytes arbitrários, incluindo zeros e atributos binários.
+`OfflineStore` uses schema version 1. It creates a local profile identifier on first open and stores records as a key, codec version and binary payload.
 
-Cada snapshot completo usa BEGIN IMMEDIATE/COMMIT, WAL e synchronous=FULL.
-Uma revisão evita sobrescrever silenciosamente outro escritor. Erros durante
-a atualização fazem rollback. Backup e restauração usam a API sqlite3_backup,
-com verificação quick_check na abertura e rejeição de schemas futuros.
+Snapshots use BEGIN IMMEDIATE/COMMIT, WAL and synchronous=FULL. Revisions reject conflicting writes. Errors roll back the transaction. Backup and restore use sqlite3_backup; opening checks integrity and rejects unsupported future schema versions.
 
-O backend foi compilado e testado em processos separados, inclusive uma saída
-abrupta antes do COMMIT. **Não há ainda serializer do inventário original, hook
-de criação/restauração dos objetos ou geração funcional de Happy Cards.**
+The backend tests include process restart and abrupt exit before commit. This establishes database behavior, not correct serialization of the original inventory.
 
-As referências de loteria disponíveis são material de investigação. Não foi
-inferida uma distribuição completa de raridades nem vendida como original uma
-probabilidade escolhida para substituir o servidor.
+## Gameplay requirements
 
-## Critério de aceitação
+The remaining work includes first-run player creation, restoration of original objects, match setup, bot teams, objectives, rewards and progression. Equipment must retain IDs, attributes, buffs, upgrades and selections across process restarts.
 
-Perfil local → menu → Skirmish → bots/objetivos → partida completa → recompensa
-→ equipar/melhorar → fechar processo → reabrir → restaurar item e todos os seus
-atributos. Repetir sem conexão de rede e validar mapas/modos um a um.
-Todas essas etapas de gameplay continuam sem teste nesta entrega.
+Happy Cards need local results based on recovered behavior or clearly documented replacement rules. The available lottery exports do not establish a complete original probability distribution.
+
+The acceptance path is: create a profile, reach the menu, start Skirmish, complete a match, receive rewards, equip and upgrade an item, close the process, reopen it and recover the same item with its attributes. Repeat without a network connection and validate supported maps and modes individually.

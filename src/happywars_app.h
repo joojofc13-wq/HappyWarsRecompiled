@@ -7,6 +7,7 @@
 #include <rex/rex_app.h>
 #include <rex/runtime.h>
 #include "verified_callbacks.h"
+#include "local_http.h"
 
 class HappyWarsApp : public rex::ReXApp {
  public:
@@ -23,6 +24,7 @@ class HappyWarsApp : public rex::ReXApp {
   }
   void OnPostSetup() override {
     RegisterVerifiedCallbacks(*runtime());
+    InitializeLocalHttp(runtime()->user_data_root()/"title-storage.sqlite");
     REXLOG_INFO("Happy Wars native build: local profile policy and title-check tracing enabled");
   }
 

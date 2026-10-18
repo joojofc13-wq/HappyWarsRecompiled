@@ -4,7 +4,6 @@
 
 namespace {
 void socket_unavailable(PPCContext& ctx) { ctx.r3.u64=0xffffffffu; }
-void http_unavailable(PPCContext& ctx) { ctx.r3.u64=0; }
 }
 
 REX_HOOK_RAW(__imp__NetDll_socket) { (void)base; socket_unavailable(ctx); }
@@ -13,9 +12,3 @@ REX_HOOK_RAW(__imp__NetDll_send) { (void)base; socket_unavailable(ctx); }
 REX_HOOK_RAW(__imp__NetDll_sendto) { (void)base; socket_unavailable(ctx); }
 REX_HOOK_RAW(__imp__NetDll_accept) { (void)base; socket_unavailable(ctx); }
 REX_HOOK_RAW(__imp__NetDll_WSAGetLastError) { (void)base; ctx.r3.u64=10050; } // WSAENETDOWN
-REX_HOOK_RAW(__imp__NetDll_XHttpOpen) { (void)base; http_unavailable(ctx); }
-REX_HOOK_RAW(__imp__NetDll_XHttpConnect) { (void)base; http_unavailable(ctx); }
-REX_HOOK_RAW(__imp__NetDll_XHttpOpenRequest) { (void)base; http_unavailable(ctx); }
-REX_HOOK_RAW(__imp__NetDll_XHttpSendRequest) { (void)base; http_unavailable(ctx); }
-REX_HOOK_RAW(__imp__NetDll_XHttpReceiveResponse) { (void)base; http_unavailable(ctx); }
-REX_HOOK_RAW(__imp__NetDll_XHttpReadData) { (void)base; http_unavailable(ctx); }
