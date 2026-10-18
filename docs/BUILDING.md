@@ -24,7 +24,11 @@ py scripts/runtime_smoke.py --seconds 120 --visible --keyboard
 
 This command closes the process when the test limit expires. Its report distinguishes a timeout from a crash. Keyboard mappings include Enter for Start, Space for A, Backspace for B, and WASD for the left stick. Controllers use SDL.
 
-A user-facing builder is planned once the game reaches its mode menu. It will let owners extract and compile their own copies.
+The default configuration targets the base game. For the tested updated version,
+see the [TU46 development profile](../ports/tu46/README.md). The experimental [Windows builder](BUILDER.md) automates this profile.
+A clean-machine setup with freshly downloaded dependencies still needs validation.
+The FPS font step requires `fonttools`, pinned in `config/upstream-lock.json`,
+and derives its font from your owned game files.
 
 ## Tests
 
@@ -44,10 +48,10 @@ Generation does not use `--force`. The build rejects missing labels and explicit
 
 ## Running the local build
 
-Double-click `LaunchHappyWars.cmd` in the project folder after building. Starting
-the executable directly without arguments produces a missing game_data_root
-message. The launcher supplies the extracted game directory and keeps save and
-cache data under the ignored private directory.
+Double-click `build/game/HappyWars.exe` after building. It resolves game, save
+and cache paths from the project folder. `LaunchHappyWars.cmd` remains available
+for separate playtest logs. `ResetSaves.cmd` clears only this port's save data
+after confirmation.
 
-This is a development launcher. The user-facing package builder remains planned
-after the original mode menu works.
+The [builder guide](BUILDER.md) describes the Windows interface, requirements
+and save locations. Gameplay stability remains under investigation.

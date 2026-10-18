@@ -1,5 +1,7 @@
 # Native boot
 
+This document records an earlier base-version investigation. See [current status](../STATUS.md) for TU46 gameplay and remaining issues.
+
 The native build reaches the intro and a 3D title scene. A coherent virtual LIVE profile passes the account gate. The local-service build now sends storage GET and PUT requests, then encounters a guest access violation. The mode menu and gameplay remain unverified.
 
 ## Function discovery

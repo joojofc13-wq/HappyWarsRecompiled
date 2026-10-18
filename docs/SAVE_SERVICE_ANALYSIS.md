@@ -1,5 +1,7 @@
 # Save-service boundary
 
+This document records an earlier base-version investigation. See [current status](../STATUS.md) for TU46 gameplay and remaining issues.
+
 The account check passes. The latest interactive run resolves the local endpoint
 and sends GET and PUT storage requests through the in-process transport. It later
 encounters a guest access violation reading address 0x00000004. Full player-state
