@@ -2,7 +2,7 @@
 
 Download **HappyWarsBuilder.exe** from the project's prereleases. Select your
 **Game folder** and an empty **Output folder**, accept the Microsoft build-tools
-license, then click **Build**. Those are the only folder fields.
+license, then click **Build / Update**. Those are the only folder fields.
 
 Use your own extracted Xbox 360 copy from **Happy Wars Revival**: TU46,
 version **0.0.46.7**, Media ID **5CEC066D**. The builder verifies the executable
@@ -28,20 +28,43 @@ No system PATH change is made. Game files and updates are never downloaded.
 
 1. Select the game folder and a new or empty output folder.
 2. Read the **License** link and accept the Microsoft build-tools license.
-3. Click **Build** and wait for completion. Downloads and native compilation can take time.
+3. Click **Build / Update** and wait for completion. Downloads and native compilation can take time.
 4. Click **Open game folder**, then double-click **HappyWars.exe**.
 
-The original input is unchanged. Nonempty output folders are rejected. Failed
+The original input is unchanged. New builds require an empty output folder. Failed
 builds retain their files and logs for diagnosis; use a new empty output for
 another attempt. The workspace path is shown during setup; its main log is `logs/builder.log`.
 
 The output contains `HappyWars.exe`, runtime DLLs, the owned files in `game/`,
 and the save-reset helper. It contains no source tree, compiler or object files. Playing does not require LLVM or Python installed separately.
 
-The FPS counter uses an optional compatible original Scaleform font. TU46 uses
-different font resources, so a build without that optional base-game font keeps
-the FPS overlay disabled. Maintainers can supply their owned font through
-`fps_font_source` in ignored `config/local-tools.json`.
+The FPS counter is included in every build and toggles with **F6**. It uses the
+original game font when available and a built-in font otherwise.
+
+## Update an installed build
+
+1. Select **Update existing build**.
+2. Set **Output folder** to the folder containing `HappyWars.exe` and `game/`.
+3. Leave **Game folder** empty to reuse that installation's owned game files.
+4. Close the game, accept the tool license and click **Build / Update**.
+
+The builder compiles the current sources in a separate workspace, then replaces
+runtime files. It preserves `game/`, `saves/`, `cache/`, user settings and extra
+files. Replaced runtime files are retained in `.update-backups/`. Replacement
+failures trigger rollback; locked files stop installation before replacement.
+Do not launch the game while an update is being installed.
+
+## Frame rate
+
+TU46 builds enable an **experimental 60 FPS target**. Edit `HappyWars.ini` beside
+the executable and set `[Graphics] FrameRate=30` to restore original pacing.
+Restart after changing it. Existing INI settings are preserved during updates.
+Explicit video-refresh command-line or environment settings take precedence.
+
+This changes guest presentation refresh without changing the guest clock. Short
+boot trials reached a 61.5 FPS sample, and a user reported 60 FPS after menu
+access. Sustained gameplay, animation timing, physics and match timers still
+need validation. It does not guarantee 60 FPS on every PC or resolve GPU hangs.
 
 ## Saves
 

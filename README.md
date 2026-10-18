@@ -37,7 +37,7 @@ The Windows builder needs your own compatible game files, an internet connection
 
 Download **HappyWarsBuilder.exe** from the [prereleases](https://github.com/joojofc13-wq/HappyWarsRecompiled/releases) to compile your supported TU46 copy through a simple Windows interface. Select only the game and output folders; Python, Git, LLVM and the Microsoft SDK are prepared automatically. See the [builder guide](docs/BUILDER.md). No game binary or assets are included.
 
-After building, open `build/game` and double-click **HappyWars.exe**. It finds the game and save paths automatically. **ResetSaves.cmd** beside it resets only this port's saves after confirmation. The development launcher remains available for separate playtest logs.
+After using the builder, open your selected output folder and double-click **HappyWars.exe**. Source builds place it in `build/game`. It finds the game and save paths automatically. **ResetSaves.cmd** beside it resets only this port's saves after confirmation. The development launcher remains available for separate playtest logs.
 
 Keyboard controls: Enter for Start, Space for A, Backspace for B, and WASD for the left stick. F6 toggles the FPS counter. The SDK also supports controllers through SDL.
 
@@ -49,9 +49,11 @@ The [Windows builder](docs/BUILDER.md) applies the [TU46 development profile](po
 - Intro, title, tutorial and Skirmish rendering through the Xenos backend in the TU46 development port.
 - Virtual local LIVE profile that passes the account check.
 - In-process HTTP transport, SQLite title storage, dated backups and local statistics views.
-- FPS counter using a font extracted locally from the owned game, with an F6 toggle.
+- FPS counter in every build, with an F6 toggle and an optional original game font.
+- Experimental 60 FPS target with a 30 FPS setting in `HappyWars.ini`.
+- Native TU46 memory-copy and fill fast paths checked against the original routines.
 - Permanent local Premium membership from the first launch in TU46.
-- Windows builder, direct executable startup and a save-reset helper.
+- Windows builder with progress, existing-build updates, runtime backups and direct executable startup.
 - Separate playtest logs with grouped missing-function and GPU failures.
 - Repeatable extraction, integrity checks, code generation and build scripts.
 

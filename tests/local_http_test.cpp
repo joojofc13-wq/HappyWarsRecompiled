@@ -6,6 +6,8 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
+REX_EXTERN(__imp__NetDll_XHttpSetStatusCallback);
+REX_EXTERN(__imp__NetDll_XHttpWriteData);
 REX_EXTERN(__imp__NetDll_XHttpOpen);
 REX_EXTERN(__imp__NetDll_XHttpConnect);
 REX_EXTERN(__imp__NetDll_XHttpOpenRequest);
@@ -19,6 +21,20 @@ REX_EXTERN(__imp__NetDll_XHttpShutdown);
 REX_EXTERN(__imp__NetDll_XHttpCrackUrl);
 REX_EXTERN(__imp__XamGetToken);
 REX_EXTERN(__imp__XamFreeToken);
+namespace {
+std::vector<uint32_t> completed_writes;
+void capture(PPCContext& ctx,uint8_t* base) {
+  if(ctx.r5.u32!=0x100000 || ctx.r7.u32!=4) throw std::runtime_error("Unexpected callback");
+  uint32_t value;std::memcpy(&value,base+ctx.r6.u32,4);
+  completed_writes.push_back(std::byteswap(value));
+}
+}
+namespace rex::runtime {
+PPCFunc* ResolveIndirectFunction(uint32_t address) {
+  if(address!=0x1234) throw std::runtime_error("Unexpected guest callback address");
+  return capture;
+}
+}
 int main(int argc,char** argv) try {
   if(argc!=2) return 1;
   std::array<uint8_t,16384> memory{};
@@ -105,6 +121,26 @@ int main(int argc,char** argv) try {
   ctx={};ctx.r4.u64=h;ctx.r5.u64=4098;ctx.r6.u64=1024;ctx.r7.u64=3000;
   __imp__NetDll_XHttpReadData(ctx,base);
   if(ctx.r3.u32!=1 || read(3000)!=3 || std::memcmp(base+4096,payload.data(),payload.size())) return 11;
+  // Reusing a response after a shorter replacement must reset the read cursor.
+  const auto reusable=h;
+  h=request("PUT",{9,0});if(query(h,0x20000013)!=201) return 20;
+  ctx={};ctx.r4.u64=reusable;__imp__NetDll_XHttpReceiveResponse(ctx,base);
+  ctx={};ctx.r4.u64=reusable;ctx.r5.u64=4096;ctx.r6.u64=1024;ctx.r7.u64=3000;
+  __imp__NetDll_XHttpReadData(ctx,base);
+  if(ctx.r3.u32!=1 || read(3000)!=2 || memory[4096]!=9 || memory[4097]) return 21;
+  ctx={};ctx.r4.u64=reusable;ctx.r5.u64=4096;ctx.r6.u64=1024;ctx.r7.u64=3000;
+  __imp__NetDll_XHttpReadData(ctx,base);
+  if(ctx.r3.u32!=1 || read(3000)) return 22;
+  // Async completions must not point at a reused caller output DWORD.
+  ctx={};ctx.r4.u64=h;ctx.r5.u64=0x1234;ctx.r6.u64=0x100000;
+  __imp__NetDll_XHttpSetStatusCallback(ctx,base);
+  for(uint32_t size:{3u,5u}) {
+    ctx={};ctx.r4.u64=h;ctx.r5.u64=2048;ctx.r6.u64=size;ctx.r7.u64=3000;
+    __imp__NetDll_XHttpWriteData(ctx,base);if(ctx.r3.u32!=1) return 23;
+  }
+  write(3000,0xBAD);
+  ctx={};ctx.r1.u64=8192;__imp__NetDll_XHttpDoWork(ctx,base);
+  if(completed_writes!=std::vector<uint32_t>{3,5}) return 24;
   str(1300,"ETag");write(3000,32);
   ctx={};ctx.r4.u64=h;ctx.r5.u64=0xffff;ctx.r6.u64=1300;ctx.r7.u64=3100;ctx.r8.u64=3000;
   __imp__NetDll_XHttpQueryHeaders(ctx,base);

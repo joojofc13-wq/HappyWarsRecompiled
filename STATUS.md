@@ -17,8 +17,8 @@ addresses and boundary declarations. The Windows builder completed a new staged 
 | TU46 input | Version 0.0.46.7, Media ID 5CEC066D, Title ID 58410AE9; exact executable hash recorded in the version profile |
 | Original behavior | Missing callback and adapter boundaries are declared and compiled from the owned executable |
 | Graphics and input | Intro, 3D scenes and gameplay observed; SDL keyboard/controller support |
-| Performance | Translated code uses `-O1`; low FPS reported; no measured optimization improvement claimed |
-| FPS counter | Original game font extracted locally; counter observed; F6 toggle implemented, user toggle check pending |
+| Performance | Native CRT fast paths pass original-code comparison; 4 KiB memset microbenchmark: 42.4 ms translated vs 4.9 ms native; whole-game improvement unmeasured |
+| FPS counter | Original game font extracted locally; counter observed; F6 toggle implemented, built-in font fallback available |
 | Profile and services | Local identity, loopback network status, in-process HTTP and empty statistics views |
 | Saves | Original payloads stored in SQLite with slots, revisions, transactions and dated backups; complete progression recovery unverified |
 | Menu and Skirmish | Game Home, tutorial and short Skirmish gameplay confirmed |
@@ -26,6 +26,8 @@ addresses and boundary declarations. The Windows builder completed a new staged 
 | Tickets and Premium | Local ticket hooks and permanent Premium policy implemented; ticket spending and Premium reward/UI effects need validation |
 | Maps and modes | Full coverage, match completion and rewards remain unverified |
 | GPU stability | Disabling bindless resources did not fix the crash; committed shared memory is the current unverified trial |
+| Frame pacing | Experimental 60 FPS target; short boot sample reached 61.5 FPS; full gameplay timing unverified |
+| Build updates | Existing standalone runtime updates preserve profiles and game files, with backups and rollback tests |
 | Distribution | Windows builder and public sources; no playable game binary or assets |
 
 ## Validation
@@ -46,7 +48,7 @@ GPU settings. See [GPU diagnostics](docs/GPU_DIAGNOSTICS.md) and
 1. Resolve the GPU page fault and complete a sustained Skirmish match.
 2. Implement the remaining local Marketplace responses.
 3. Verify rewards, ticket spending and progression after restarting.
-4. Validate maps, modes and optional mods.
+4. Validate maps and modes.
 5. Measure performance and validate the public TU46 build workflow.
 
 Releases follow [verified milestones](docs/RELEASES.md).

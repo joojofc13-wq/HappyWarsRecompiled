@@ -20,7 +20,11 @@ struct Handle {
   happywars::LocalResponse response{0,"",{}};
   size_t position=0;
 };
-struct Event { uint32_t handle,callback,context,status,info,length; };
+struct Event {
+  uint32_t handle,callback,context,status,info,length;
+  uint32_t value=0;
+  bool inline_value=false;
+};
 std::mutex mutex;
 std::unordered_map<uint32_t,Handle> handles;
 std::deque<Event> events;
@@ -121,7 +125,8 @@ REX_HOOK_RAW(__imp__NetDll_XHttpWriteData) {
   auto& h=found->second;
   h.upload.insert(h.upload.end(),base+ctx.r5.u32,base+ctx.r5.u32+ctx.r6.u32);
   if(valid(base,ctx.r7.u32,4)) write32(base,ctx.r7.u32,ctx.r6.u32);
-  queue(found->first,h,0x100000,ctx.r7.u32,4);
+  if(h.callback && (h.mask&0x100000))
+    events.push_back({found->first,h.callback,h.context,0x100000,0,4,ctx.r6.u32,true});
   ctx.r3.u64=1;
 }
 REX_HOOK_RAW(__imp__NetDll_XHttpReceiveResponse) {
@@ -129,6 +134,7 @@ REX_HOOK_RAW(__imp__NetDll_XHttpReceiveResponse) {
   const auto found=handles.find(ctx.r4.u32);
   if(found==handles.end() || found->second.kind!=Kind::Request || !service) { ctx.r3.u64=0; return; }
   auto& h=found->second;
+  h.position=0;
   try { h.response=service->request(h.method,h.path,h.upload); }
   catch(const std::exception& error) {
     REXLOG_ERROR("Local HTTP storage failure: {}",error.what());
@@ -147,6 +153,7 @@ REX_HOOK_RAW(__imp__NetDll_XHttpQueryHeaders) {
   uint32_t number=0;
   std::string value;
   switch(query&0xffff) {
+    case 19:
     case 0xfffe: number=response.status; value=std::to_string(number); break;
     case 9: number=uint32_t(response.body.size()); value=std::to_string(number); break;
     case 0xffff:
@@ -198,6 +205,12 @@ REX_HOOK_RAW(__imp__NetDll_XHttpDoWork) {
     frame.ctx.r1.u32-=0x100;
     frame.ctx.r3.u64=event.handle; frame.ctx.r4.u64=event.context;
     frame.ctx.r5.u64=event.status; frame.ctx.r6.u64=event.info; frame.ctx.r7.u64=event.length;
+    if(event.inline_value) {
+      // Completion values belong to the queued event, not a caller buffer that
+      // may have changed before this pump runs. Keep the DWORD live on this call frame.
+      frame.ctx.r6.u64=frame.ctx.r1.u32+0x80;
+      write32(base,frame.ctx.r6.u32,event.value);
+    }
     rex::runtime::ResolveIndirectFunction(event.callback)(frame.ctx,base);
   }
   ctx.r3.u64=1;
