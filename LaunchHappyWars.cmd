@@ -11,4 +11,4 @@ if not exist "%~dp0private\game\Default.xex" (
   exit /b 1
 )
 if not exist "%~dp0logs" mkdir "%~dp0logs"
-start "" /D "%~dp0build\game" "%~dp0build\game\HappyWars.exe" "--game_data_root=%~dp0private\game" "--user_data_root=%~dp0private\smoke-user" "--cache_root=%~dp0private\smoke-cache" "--log_file=%~dp0logs\runtime-launcher.log" --window_width=1280 --window_height=720 --mnk_mode=true
+start "" /D "%~dp0" pyw.exe "%~dp0scripts\playtest.py"

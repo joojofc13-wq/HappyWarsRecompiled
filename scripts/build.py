@@ -48,6 +48,9 @@ if __name__=='__main__':
     if a.diagnostics:
         a.game=True
     settings=json.loads(a.settings.read_text())
+    if a.game and not a.diagnostics:
+        from prepare_fps_font import prepare
+        prepare(source=settings.get('fps_font_source'))
     env=environment(settings)
     label='game' if a.game else 'translation' if a.translation_test else 'storage'
     build=ROOT/'build'/label

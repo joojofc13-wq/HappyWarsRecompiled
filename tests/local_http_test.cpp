@@ -45,6 +45,27 @@ int main(int argc,char** argv) try {
   ctx={};ctx.r4.u64=256;ctx.r5.u64=19;ctx.r6.u64=1200;
   __imp__XamGetToken(ctx,base);
   if(ctx.r3.u32!=87 || read(1200)) return 4;
+  // A catalog URL must parse even though the transport never leaves the PC.
+  const std::string catalog="https://catalog.example:8443/offers?locale=en-US";
+  str(256,catalog);
+  std::memset(base+64,0,60);write(64,60);
+  write(80,1024);write(84,128);write(108,1500);write(112,64);
+  write(116,1600);write(120,64);
+  ctx={};ctx.r4.u64=256;ctx.r5.u64=catalog.size();ctx.r7.u64=64;
+  __imp__NetDll_XHttpCrackUrl(ctx,base);
+  if(ctx.r3.u32!=1 || read(76)!=2 || memory[88]!=0x20 || memory[89]!=0xfb ||
+      std::strcmp(reinterpret_cast<char*>(base+1024),"catalog.example") ||
+      std::strcmp(reinterpret_cast<char*>(base+1500),"/offers") ||
+      std::strcmp(reinterpret_cast<char*>(base+1600),"?locale=en-US")) return 17;
+  write(84,4);memory[1024]=0x5a;
+  ctx={};ctx.r4.u64=256;ctx.r5.u64=catalog.size();ctx.r7.u64=64;
+  __imp__NetDll_XHttpCrackUrl(ctx,base);
+  if(ctx.r3.u32 || read(84)!=16 || memory[1024]!=0x5a) return 18;
+  str(256,"https://catalog.example:99999/offers");
+  ctx={};ctx.r4.u64=256;ctx.r5.u64=std::strlen(reinterpret_cast<char*>(base+256));ctx.r7.u64=64;
+  __imp__NetDll_XHttpCrackUrl(ctx,base);
+  if(ctx.r3.u32) return 19;
+  str(1024,"happywars.local");
   str(256,url);
   const auto database=std::filesystem::path(argv[1]).concat("."+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
   uint32_t session=0,connection=0;

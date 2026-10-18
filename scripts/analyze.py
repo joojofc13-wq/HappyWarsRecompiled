@@ -112,6 +112,8 @@ def import_report(xex, image, table_root):
         module=library['name'].split('.')[0]
         names={}
         table=Path(table_root)/module/(module+'_table.inc')
+        if not table.exists():
+            table=Path(table_root)/module/'export_table.inc'
         if table.exists():
             for ordinal,name in re.findall(r'XE_EXPORT\([^,]+,\s*(0x[0-9A-Fa-f]+),\s*(\w+)',table.read_text()):
                 names[int(ordinal,16)]=name

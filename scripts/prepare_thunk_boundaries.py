@@ -21,6 +21,36 @@ def virtual_registers(image,offset):
         return None
     return table,target
 
+def member_virtual_register(image,offset):
+    """Recognize a complete member-object virtual-call adapter, not an inner block."""
+    if offset<0 or offset+24>len(image):
+        return None
+    load,adjust,table,target,mtctr,bctr=struct.unpack_from('>6I',image,offset)
+    register=(load>>21)&31
+    if register not in (10,11,12) or load&0xffff0000!=(0x80030000|(register<<21)):
+        return None
+    if adjust&0xffff0000!=(0x38600000|(register<<16)):
+        return None
+    if table!=(0x80000000|(register<<21)|(register<<16)|(adjust&0xffff)):
+        return None
+    if target&0xffff0000!=(0x80000000|(register<<21)|(register<<16)):
+        return None
+    if mtctr!=(0x7c0903a6|(register<<21)) or bctr!=0x4e800420:
+        return None
+    return register
+
+def constant_tail(image,offset,address):
+    if offset<0 or offset+8>len(image):
+        return None
+    first,branch=struct.unpack_from('>II',image,offset)
+    register=(first>>21)&31
+    if first&0xfc1f0000!=0x38000000 or not 3<=register<=12 or branch&0xfc000003!=0x48000000:
+        return None
+    displacement=branch&0x03fffffc
+    if displacement&0x02000000:
+        displacement-=0x04000000
+    return register,(address+4+displacement)&0xffffffff
+
 def prepare():
     audit()
     candidates=json.loads((ROOT/'logs/indirect-target-audit.json').read_text())['entries']
@@ -54,6 +84,28 @@ def prepare():
     # addresses are materialized in code instead of appearing in .rdata.
     section=next(s for s in pe['sections'] if s['name']=='.text')
     start=section['rva']; end=start+section['virtual_size']
+    # Adjacent argument specializations may have their addresses constructed
+    # in code rather than stored in a vtable. Require a registered first entry,
+    # identical argument register and destination, and complete non-linking tails.
+    for anchor in registered:
+        offset=anchor-base
+        if not start<=offset<end:
+            continue
+        signature=constant_tail(image,offset,anchor)
+        if signature is None or signature[1] not in registered:
+            continue
+        previous=int.from_bytes(image[offset-4:offset],'big')
+        if previous not in (0,0x4e800020,0x4e800420) and previous&0xfc000003!=0x48000000:
+            continue
+        siblings=[]
+        for delta in range(8,128,8):
+            address=anchor+delta
+            if offset+delta+8>end or constant_tail(image,offset+delta,address)!=signature:
+                break
+            if address not in registered:
+                siblings.append(address)
+        if siblings:
+            candidates.extend(dict(address=hex(a),references=[],exact_argument_family=True) for a in siblings)
     for prefix in ((0x80030000|(r<<21)).to_bytes(4,'big') for r in (10,11,12)):
         offset=image.find(prefix,start,end)
         while offset>=0:
@@ -62,9 +114,19 @@ def prepare():
                virtual_registers(image,offset) is not None:
                 candidates.append(dict(address=hex(address),references=[],exact_vcall_pattern=True))
             offset=image.find(prefix,offset+4,end)
+    # Member adapters first adjust this to a nested object's vtable field.
+    # Match every register dependency and the final non-linking tail dispatch.
+    for prefix in ((0x80030000|(r<<21)).to_bytes(4,'big')[:2] for r in (10,11,12)):
+        offset=image.find(prefix,start,end)
+        while offset>=0:
+            address=base+offset
+            if offset%4==0 and offset+24<=end and address not in registered and \
+               member_virtual_register(image,offset) is not None:
+                candidates.append(dict(address=hex(address),references=[],exact_vcall_pattern=True))
+            offset=image.find(prefix,offset+2,end)
     entries={}
     for candidate in candidates:
-        if not candidate.get('exact_vcall_pattern') and not any(r['adjacent_code_pointers'] for r in candidate['references']):
+        if not candidate.get('exact_vcall_pattern') and not candidate.get('exact_argument_family') and not any(r['adjacent_code_pointers'] for r in candidate['references']):
             continue
         address=int(candidate['address'],16)
         containing=bisect_right(starts,address)-1
@@ -75,25 +137,30 @@ def prepare():
         # Exact four-instruction virtual-dispatch entry. Preserve the guest
         # context; the SDK translates the loads and indirect tail call normally.
         registers=virtual_registers(image,offset)
-        if registers is not None:
+        member_register=member_virtual_register(image,offset)
+        if registers is not None or member_register is not None:
             previous=int.from_bytes(image[offset-4:offset],'big')
             if previous not in (0,0x4e800020,0x4e800420) and previous&0xfc000001!=0x48000000:
                 # A tail-call block preceded by argument preparation or a
                 # conditional branch belongs to the containing function.
                 continue
-            entries[address]=dict(address=hex(address),size=16,target='ctr (virtual dispatch)',
-                kind='lwz; lwz; mtctr; bctr',table_register=registers[0],target_register=registers[1],
-                original_bytes=image[offset:offset+16].hex())
+            size=24 if member_register is not None else 16
+            entries[address]=dict(address=hex(address),size=size,target='ctr (virtual dispatch)',
+                kind='lwz; addi; lwz; lwz; mtctr; bctr' if size==24 else 'lwz; lwz; mtctr; bctr',
+                table_register=member_register if size==24 else registers[0],
+                target_register=member_register if size==24 else registers[1],
+                original_bytes=image[offset:offset+size].hex())
             continue
         # Constant-argument adapters (li rN,imm; b) are complete functions too.
         # Require a preceding terminator, data-pointer evidence and a known
         # destination, excluding internal blocks covered by unwind metadata.
         constant_argument=(first&0xfc1f0000==0x38000000 and 3<=((first>>21)&31)<=12)
-        if constant_argument:
+        load_argument=first&0xffff0000==0x80630000
+        if constant_argument or load_argument:
             previous=int.from_bytes(image[offset-4:offset],'big')
             if previous not in (0,0x4e800020,0x4e800420) and previous&0xfc000003!=0x48000000:
                 continue
-        size=8 if first&0xffff0000==0x38630000 or constant_argument else 4
+        size=8 if first&0xffff0000==0x38630000 or constant_argument or load_argument else 4
         branch_address=address+size-4
         branch=int.from_bytes(image[branch_address-base:branch_address-base+4],'big')
         # Relative, non-linking, unconditional b only; no bc, bctr or bctrl.
@@ -106,7 +173,7 @@ def prepare():
         if target not in registered or target==address:
             continue
         entries[address]=dict(address=hex(address),size=size,target=hex(target),
-            kind='li rN,imm; b' if constant_argument else 'addi r3,r3,imm; b' if size==8 else 'b',
+            kind='li rN,imm; b' if constant_argument else 'lwz r3,imm(r3); b' if load_argument else 'addi r3,r3,imm; b' if size==8 else 'b',
             original_bytes=image[offset:offset+size].hex())
     lines=['# Verified real short tail-call entries; generated from local game data.','[functions]']
     lines.extend(f'0x{a:08X} = {{ size = {e["size"]}, share_registers = true }} # {e["kind"]} -> {e["target"]}'

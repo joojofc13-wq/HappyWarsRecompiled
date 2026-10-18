@@ -1,0 +1,9 @@
+[project]
+name = "happywars"
+sdk_version = "0.10.0"
+game_root = "private/game"
+
+[entrypoint]
+file_path = "private/game/Default.xex"
+out_directory_path = "generated/default"
+includes = ["config/function-boundaries.toml", "config/verified-thunks.toml"]

@@ -11,6 +11,20 @@ namespace {
 constexpr uint64_t kQuota=64*1024*1024;
 constexpr std::string_view kGroup="/storage/titlestorage/titlegroups/be554af1-2afa-4168-b64f-bdcb9ce7ac7b";
 constexpr std::string_view kData="/data/hw201209/";
+bool digits(std::string_view value) {
+  return !value.empty() && std::all_of(value.begin(),value.end(),
+      [](unsigned char c){return c>='0' && c<='9';});
+}
+bool storage_namespace(std::string_view file) {
+  if(file.starts_with("slot")) {
+    const auto slash=file.find('/');
+    return slash!=std::string_view::npos && digits(file.substr(4,slash-4));
+  }
+  // TU46 writes dated backup blobs alongside its numbered save slots.
+  return file.starts_with("backup/") && file.size()>18 &&
+      file[11]=='/' && file[14]=='/' && file[17]=='/' &&
+      digits(file.substr(7,4)) && digits(file.substr(12,2)) && digits(file.substr(15,2));
+}
 LocalResponse text(unsigned status,std::string value) {
   return {status,"application/json",{value.begin(),value.end()}};
 }
@@ -64,12 +78,8 @@ LocalResponse LocalTitleStorage::request(std::string_view method,std::string_vie
   const bool binary=file.ends_with(",binary");
   if(binary) file.resize(file.size()-7);
   if(file.size()>512 || file.find("..")!=std::string::npos || file.find('\\')!=std::string::npos ||
-      file.find('%')!=std::string::npos || !file.starts_with("slot"))
+      file.find('%')!=std::string::npos || !storage_namespace(file))
     return text(400,"{\"error\":\"invalid_blob_path\"}");
-  const auto slash=file.find('/');
-  if(slash==std::string::npos || slash==4 ||
-     !std::all_of(file.begin()+4,file.begin()+slash,[](unsigned char c){return std::isdigit(c);}))
-    return text(400,"{\"error\":\"invalid_slot\"}");
   const std::string key="title-storage/"+file;
   auto found=std::find_if(records.begin(),records.end(),[&](const auto& r){return r.key==key;});
   if(method=="GET" && binary) {

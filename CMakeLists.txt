@@ -29,6 +29,14 @@ endif()
 
 if(HAPPYWARS_TEST_TRANSLATION)
     find_package(rexglue CONFIG REQUIRED)
+    add_executable(local_live_network_test tests/local_live_network_test.cpp runtime/local_live_network.cpp)
+    target_link_libraries(local_live_network_test PRIVATE rex::runtime)
+    rexglue_apply_target_settings(local_live_network_test)
+    add_test(NAME local_live_network COMMAND local_live_network_test)
+    add_executable(local_stats_enumerator_test tests/local_stats_enumerator_test.cpp runtime/local_stats_enumerator.cpp)
+    target_link_libraries(local_stats_enumerator_test PRIVATE rex::runtime)
+    rexglue_apply_target_settings(local_stats_enumerator_test)
+    add_test(NAME local_stats_enumerator COMMAND local_stats_enumerator_test ${CMAKE_CURRENT_BINARY_DIR}/stats-enumerator-user)
     add_executable(translated_leaf_test tests/translated_leaf_test.cpp private/tests/translated_leaf.cpp)
     target_include_directories(translated_leaf_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(translated_leaf_test PRIVATE rex::runtime)
@@ -60,6 +68,16 @@ if(HAPPYWARS_TEST_TRANSLATION)
     target_link_libraries(offline_profile_test PRIVATE rex::runtime)
     rexglue_apply_target_settings(offline_profile_test)
     add_test(NAME offline_profile COMMAND offline_profile_test)
+    add_executable(local_premium_test tests/local_premium_test.cpp runtime/local_premium.cpp)
+    target_compile_definitions(local_premium_test PRIVATE HAPPYWARS_TU46=1)
+    target_link_libraries(local_premium_test PRIVATE rex::runtime)
+    rexglue_apply_target_settings(local_premium_test)
+    add_test(NAME local_premium COMMAND local_premium_test)
+    add_executable(local_tickets_test tests/local_tickets_test.cpp runtime/local_tickets.cpp)
+    target_compile_definitions(local_tickets_test PRIVATE HAPPYWARS_TU46=1)
+    target_link_libraries(local_tickets_test PRIVATE rex::runtime)
+    rexglue_apply_target_settings(local_tickets_test)
+    add_test(NAME local_tickets COMMAND local_tickets_test)
     add_executable(offline_auth_test tests/offline_auth_test.cpp runtime/offline_auth.cpp)
     target_link_libraries(offline_auth_test PRIVATE rex::runtime)
     rexglue_apply_target_settings(offline_auth_test)
@@ -72,6 +90,13 @@ if(HAPPYWARS_TEST_TRANSLATION)
     target_link_libraries(local_http_test PRIVATE rex::runtime local_title_storage)
     rexglue_apply_target_settings(local_http_test)
     add_test(NAME local_http COMMAND local_http_test ${CMAKE_CURRENT_BINARY_DIR}/http-storage-test.sqlite)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/private/tests/translated_stats.cpp")
+        add_executable(local_stats_test tests/local_stats_test.cpp runtime/local_stats.cpp private/tests/translated_stats.cpp)
+        target_include_directories(local_stats_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+        target_link_libraries(local_stats_test PRIVATE rex::runtime)
+        rexglue_apply_target_settings(local_stats_test)
+        add_test(NAME local_stats COMMAND local_stats_test)
+    endif()
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/private/tests/translated_indexed_dispatch.cpp")
         add_executable(translated_indexed_dispatch_test tests/translated_indexed_dispatch_test.cpp private/tests/translated_indexed_dispatch.cpp)
         target_include_directories(translated_indexed_dispatch_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -111,6 +136,12 @@ set(HAPPYWARS_SOURCES
     runtime/local_service_directory.cpp
     runtime/local_http.cpp
     runtime/local_http_uri.cpp
+    runtime/local_stats.cpp
+    runtime/local_stats_enumerator.cpp
+    runtime/local_live_network.cpp
+    runtime/local_tickets.cpp
+    runtime/local_premium.cpp
+    runtime/fps_overlay.cpp
     runtime/verified_callbacks.cpp
     runtime/function_registration.cpp
 )
@@ -142,5 +173,14 @@ if(NOT HAPPYWARS_RECOMP_OPT_LEVEL MATCHES "^[0-3]$")
 endif()
 target_compile_options(happywars_recomp PRIVATE -O${HAPPYWARS_RECOMP_OPT_LEVEL})
 set_target_properties(happywars PROPERTIES OUTPUT_NAME HappyWars)
+add_custom_command(TARGET happywars POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/ResetSaves.cmd" "$<TARGET_FILE_DIR:happywars>/ResetSaves.cmd"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/scripts/reset_saves.ps1" "$<TARGET_FILE_DIR:happywars>/reset_saves.ps1")
+set(HAPPYWARS_FPS_FONT "${CMAKE_CURRENT_SOURCE_DIR}/private/ui/happywars-fps.ttf")
+set_property(TARGET happywars APPEND PROPERTY LINK_DEPENDS "${HAPPYWARS_FPS_FONT}")
+add_custom_command(TARGET happywars POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:happywars>/fonts"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${HAPPYWARS_FPS_FONT}" "$<TARGET_FILE_DIR:happywars>/fonts/happywars-fps.ttf")
 # Storage backend awaits a verified game-specific serialization hook.
 endif()

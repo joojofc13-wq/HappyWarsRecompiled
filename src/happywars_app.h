@@ -9,6 +9,12 @@
 #include "verified_callbacks.h"
 #include "local_http.h"
 #include "crash_diagnostics.h"
+#include "fps_overlay.h"
+#include <rex/ui/keybinds.h>
+#include <rex/filesystem.h>
+#include <rex/cvar.h>
+#include <fstream>
+#include <regex>
 
 class HappyWarsApp : public rex::ReXApp {
  public:
@@ -23,13 +29,54 @@ class HappyWarsApp : public rex::ReXApp {
   void OnPreSetup(rex::RuntimeConfig& config) override {
     if (config.gpu_plugin.empty()) config.gpu_plugin = "xenos";
   }
+  void OnConfigurePaths(rex::PathConfig& paths) override {
+    auto folder = rex::filesystem::GetExecutableFolder();
+    for (unsigned depth = 0; depth < 4; ++depth, folder = folder.parent_path()) {
+      if (!std::filesystem::is_regular_file(folder / "happywars_manifest.toml")) continue;
+      if (paths.game_data_root.empty()) paths.game_data_root = folder / "private/game";
+      auto read_text = [](const std::filesystem::path& file) {
+        std::ifstream input(file);
+        return std::string(std::istreambuf_iterator<char>(input), {});
+      };
+      if (rex::cvar::GetFlagByName("user_data_root").empty())
+        paths.user_data_root = folder / "private/smoke-user";
+      if (rex::cvar::GetFlagByName("cache_root").empty()) paths.cache_root = folder / "private/smoke-cache";
+      const auto gpu = read_text(folder / "private/gpu-settings.json");
+      for (const auto* key : {"d3d12_bindless", "d3d12_debug", "d3d12_tiled_shared_memory"}) {
+        std::smatch match;
+        if (std::regex_search(gpu, match, std::regex(std::string("\"") + key + "\"\\s*:\\s*(true|false)")))
+          rex::cvar::SetFlagByName(key, match[1].str());
+      }
+      rex::cvar::SetFlagByName("mnk_mode", "true");
+      break;
+    }
+  }
   void OnPostSetup() override {
+    InitializeFrameCounter();
     RegisterVerifiedCallbacks(*runtime());
     InitializeLocalHttp(runtime()->user_data_root()/"title-storage.sqlite");
     InitializeCrashDiagnostics(runtime()->user_data_root()/"guest-fault.log");
     REXLOG_INFO("Happy Wars native build: local profile policy and title-check tracing enabled");
   }
+  void OnConfigureFonts(ImFontAtlas* atlas) override {
+    fps_font_=LoadGameFpsFont(atlas);
+  }
+  void OnCreateDialogs(rex::ui::ImGuiDrawer* drawer) override {
+    fps_overlay_=CreateFpsOverlay(drawer,fps_font_);
+    rex::ui::RegisterBind("bind_fps_counter","F6","Toggle FPS counter",[this,drawer] {
+      if(fps_overlay_) fps_overlay_.reset();
+      else fps_overlay_=CreateFpsOverlay(drawer,fps_font_);
+      REXLOG_INFO("FPS counter {}",fps_overlay_?"enabled":"disabled");
+    });
+  }
+  void OnShutdown() override {
+    rex::ui::UnregisterBind("bind_fps_counter");
+    fps_overlay_.reset();
+  }
 
+ private:
+  ImFont* fps_font_=nullptr;
+  std::unique_ptr<rex::ui::ImGuiDialog> fps_overlay_;
   // Override virtual hooks for customization:
   // void OnPostInitLogging() override {}
   // void OnLoadXexImage(std::string& xex_image) override {}

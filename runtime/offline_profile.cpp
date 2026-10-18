@@ -1,6 +1,7 @@
 // Virtual LIVE-compatible identity, exclusively inside this local native port.
 // No real account, credentials, remote subscription or remote session is used.
 #include <rex/ppc.h>
+#include <rex/runtime.h>
 #include <algorithm>
 #include <atomic>
 #include <bit>
@@ -17,6 +18,12 @@ template<typename T> void store(uint8_t* base,uint32_t address,T value) {
   value=std::byteswap(value);
   std::memcpy(base+address,&value,sizeof(value));
 }
+}
+REX_HOOK_RAW(__imp__XNetLogonGetTitleID) {
+  auto* runtime=rex::Runtime::instance();
+  ctx.r3.u64=runtime && runtime->kernel_state()?runtime->kernel_state()->title_id():0;
+  static std::atomic<unsigned> calls{};
+  if(calls.fetch_add(1)<8) REXLOG_INFO("Local LIVE title identity: {:#x}",ctx.r3.u32);
 }
 REX_HOOK_RAW(__imp__XamUserGetSigninState) {
   const auto user=ctx.r3.u32;

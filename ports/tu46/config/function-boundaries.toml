@@ -1,0 +1,25 @@
+# Exact complete original bodies with a unique match in TU46.
+[functions]
+0x83702A50 = { size = 0x44 }
+0x83704FF8 = { size = 0x100 }
+0x8370A8B8 = { size = 0x18 }
+0x83849730 = { size = 0x20, share_registers = true }
+0x83849750 = { size = 0x20, share_registers = true }
+0x83849770 = { size = 0x20, share_registers = true }
+0x83849790 = { size = 0x20, share_registers = true }
+0x838497B0 = { size = 0x20, share_registers = true }
+0x838497D0 = { size = 0x20, share_registers = true }
+0x838497F0 = { size = 0x20, share_registers = true }
+0x83250148 = { size = 0x10, share_registers = true }
+0x83710C48 = { size = 4 } # Original tail branch to 0x8370CF18; padding follows.
+0x8370F910 = { size = 4 } # Original tail branch to 0x8370CF18; padding follows.
+0x8370DC98 = { size = 4 } # Original tail branch to 0x8370CF18; padding follows.
+0x832ABEB0 = { size = 0x10 } # Original two loads, subtraction, blr; next function at 0x832ABEC0.
+0x83908398 = { size = 0x94 } # Complete original leaf with shared bit-count block and external tail branch.
+0x829D7310 = { size = 0x30 } # Original checked 3x4 store, final blr at 0x829D733C.
+0x839A3E28 = { size = 0x10, share_registers = true } # Original cmpwi, bnelr, tail branch, blr; metadata follows.
+0x83422490 = { size = 8, share_registers = true } # Original load of member at 0x5C4, then tail branch to 0x832CF2B0.
+0x83422498 = { size = 8, share_registers = true } # Adjacent original load and tail branch to 0x832CF348.
+0x829286A0 = { size = 0x10, share_registers = true } # Original argument adapter; tail branch to 0x82980E38.
+0x829286B0 = { size = 0x10, share_registers = true } # Original argument adapter; tail branch to 0x82980E38.
+0x82925F50 = { size = 0xA8, share_registers = true } # Complete original leaf through both blr exits; next prolog at 0x82925FF8.

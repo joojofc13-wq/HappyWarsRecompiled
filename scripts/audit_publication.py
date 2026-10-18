@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-FORBIDDEN={'.exe','.dll','.xex','.xexp','.lib','.obj','.pdb','.bin','.sqlite','.zip','.bres','.pres','.wmv'}
+FORBIDDEN={'.exe','.dll','.xex','.xexp','.lib','.obj','.pdb','.bin','.sqlite','.zip','.bres','.pres','.wmv','.ttf','.otf'}
 COVER_SHA256='ebd225170505e71bc627cbf2c499cf80e13af30ed70af4864b5598e58f7a86dc'
 
 def audit():

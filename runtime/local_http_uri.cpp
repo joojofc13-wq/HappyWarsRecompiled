@@ -1,6 +1,7 @@
 // URL and token boundaries for the in-process storage service.
 #include <rex/ppc.h>
 #include <bit>
+#include <atomic>
 #include <cstring>
 #include <string_view>
 
@@ -27,7 +28,12 @@ REX_HOOK_RAW(__imp__XamGetToken) {
   const auto user=ctx.r3.u32,url=ctx.r4.u32,length=ctx.r5.u32,output=ctx.r6.u32;
   if(!valid(base,output,4)) { ctx.r3.u64=87; return; }
   write(base,output,0);
-  if(ctx.r7.u32) { ctx.r3.u64=50; return; }
+  if(ctx.r7.u32) {
+    static std::atomic<unsigned> calls{};
+    if(calls.fetch_add(1)<16)
+      REXLOG_WARN("Local token: asynchronous request not implemented, caller={:#x}",ctx.lr);
+    ctx.r3.u64=50; return;
+  }
   if(user || length>4096 || !valid(base,url,length) ||
       !local({reinterpret_cast<char*>(base+url),length})) { ctx.r3.u64=87; return; }
   // The original request pump explicitly permits a null token. Local dispatch
@@ -45,28 +51,63 @@ REX_HOOK_RAW(__imp__NetDll_XHttpCrackUrl) {
   if(length>4096 || !valid(base,url,length) || !valid(base,components,60) ||
       read(base,components)!=60) { ctx.r3.u64=0; return; }
   const std::string_view text(reinterpret_cast<char*>(base+url),length);
-  if(!local(text)) { ctx.r3.u64=0; return; }
-  constexpr uint32_t host_offset=7,host_length=sizeof("happywars.local")-1;
-  const auto slash=text.find('/',host_offset);
-  const auto path_length=slash==std::string_view::npos?0:uint32_t(text.size()-slash);
-  const auto host=read(base,components+16),capacity=read(base,components+20);
-  const auto path=read(base,components+44),path_capacity=read(base,components+48);
-  if((host && (capacity<=host_length || !valid(base,host,host_length+1))) ||
-      (path && (path_capacity<=path_length || !valid(base,path,path_length+1)))) {
-    ctx.r3.u64=0; return;
+  // Parsing a URL does not connect to it. All XHTTP handles still dispatch
+  // inside the process, including original catalog-service host names.
+  const bool secure=text.starts_with("https://");
+  if(!secure && !text.starts_with("http://")) { ctx.r3.u64=0; return; }
+  const uint32_t host_offset=secure?8:7;
+  const auto authority_end=text.find_first_of("/?#",host_offset);
+  const uint32_t end=authority_end==text.npos?length:uint32_t(authority_end);
+  auto authority=text.substr(host_offset,end-host_offset);
+  if(authority.empty() || authority.find('@')!=authority.npos ||
+      text.find_first_of("\r\n\t ")!=text.npos) { ctx.r3.u64=0; return; }
+  uint32_t port_value=secure?443:80;
+  const auto colon=authority.find(':');
+  if(colon!=authority.npos) {
+    const auto port_text=authority.substr(colon+1);
+    port_value=0;
+    if(port_text.empty()) { ctx.r3.u64=0; return; }
+    for(const char digit:port_text) {
+      if(digit<'0' || digit>'9' || port_value>6553) { ctx.r3.u64=0; return; }
+      port_value=port_value*10+uint32_t(digit-'0');
+    }
+    if(!port_value || port_value>65535) { ctx.r3.u64=0; return; }
+    authority=authority.substr(0,colon);
   }
-  if(host) std::memcpy(base+host,"happywars.local",host_length+1);
-  else if(capacity) write(base,components+16,url+host_offset);
-  if(path) {
-    if(path_length) std::memcpy(base+path,text.data()+slash,path_length);
-    base[path+path_length]=0;
-  } else if(path_capacity) {
-    write(base,components+44,url+(path_length?uint32_t(slash):length));
+  if(authority.empty()) { ctx.r3.u64=0; return; }
+  const auto extra_start=text.find_first_of("?#",end);
+  const uint32_t path_end=extra_start==text.npos?length:uint32_t(extra_start);
+  // Without an extra-info output request, XHTTP includes the query in the path.
+  const bool separate_extra=read(base,components+52) || read(base,components+56);
+  const uint32_t path_length=(separate_extra?path_end:length)-end;
+  struct Part { uint32_t field,offset,size; };
+  const Part parts[]={
+    {4,0,secure?5u:4u},{16,host_offset,uint32_t(authority.size())},
+    {28,end,0},{36,end,0},{44,end,path_length},
+    {52,path_end,separate_extra?length-path_end:0}};
+  bool fits=true;
+  for(const auto& part:parts) {
+    const auto output=read(base,components+part.field),capacity=read(base,components+part.field+4);
+    if(output && (capacity<=part.size || !valid(base,output,part.size+1))) {
+      write(base,components+part.field+4,part.size+1); fits=false;
+    }
   }
-  write(base,components+20,host_length);
-  write(base,components+48,path_length);
-  write(base,components+12,1); // HTTP; the original consumer uses 2 for HTTPS.
-  const auto port=std::byteswap(uint16_t{80});
+  if(!fits) { ctx.r3.u64=0; return; }
+  for(const auto& part:parts) {
+    const auto output=read(base,components+part.field),capacity=read(base,components+part.field+4);
+    if(output) {
+      if(part.size) std::memmove(base+output,text.data()+part.offset,part.size);
+      base[output+part.size]=0;
+    } else if(capacity) write(base,components+part.field,url+part.offset);
+    write(base,components+part.field+4,part.size);
+  }
+  write(base,components+12,secure?2:1);
+  const auto port=std::byteswap(uint16_t(port_value));
   std::memcpy(base+components+24,&port,2);
+  if(!local(text)) {
+    static std::atomic<unsigned> calls{};
+    if(calls.fetch_add(1)<16)
+      REXLOG_INFO("Local URL: original host '{}' parsed for in-process transport, caller={:#x}",authority,ctx.lr);
+  }
   ctx.r3.u64=1;
 }

@@ -47,6 +47,8 @@ if __name__=='__main__':
     subprocess.run([sys.executable,'-m','pip','install','--target',str(pytools),
         *[f'{name}=={version}' for name,version in lock['python_packages'].items()]],check=True)
     compiler=sorted(a.llvm_bin.glob('clang-[0-9]*.exe'))
+    if not compiler and (a.llvm_bin/'clang.exe').is_file():
+        compiler=[a.llvm_bin/'clang.exe']
     if not compiler:
         raise SystemExit('Real clang-<major>.exe not found in --llvm-bin')
     link_bin=tools/'native-bin'

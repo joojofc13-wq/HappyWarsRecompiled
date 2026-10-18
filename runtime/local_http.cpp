@@ -84,7 +84,7 @@ REX_HOOK_RAW(__imp__NetDll_XHttpOpenRequest) {
   auto h=found->second; h.kind=Kind::Request;
   h.method=string(base,ctx.r5.u32); h.path=string(base,ctx.r6.u32);
   if(h.method.empty()) h.method="GET";
-  REXLOG_INFO("Local HTTP: request {} {}",h.method,h.path);
+  REXLOG_INFO("Local HTTP: request {} {}",h.method,h.path.substr(0,h.path.find('?')));
   ctx.r3.u64=add(std::move(h));
 }
 REX_HOOK_RAW(__imp__NetDll_XHttpSetStatusCallback) {
@@ -134,7 +134,7 @@ REX_HOOK_RAW(__imp__NetDll_XHttpReceiveResponse) {
     REXLOG_ERROR("Local HTTP storage failure: {}",error.what());
     h.response={500,"application/json",{}};
   }
-  REXLOG_INFO("Local HTTP: {} {} -> {} ({} bytes)",h.method,h.path,h.response.status,h.response.body.size());
+  REXLOG_INFO("Local HTTP: {} {} -> {} ({} bytes)",h.method,h.path.substr(0,h.path.find('?')),h.response.status,h.response.body.size());
   queue(found->first,h,0x20000);
   ctx.r3.u64=1;
 }
