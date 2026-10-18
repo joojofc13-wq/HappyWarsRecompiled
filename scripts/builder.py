@@ -160,6 +160,8 @@ def main():
     import tkinter as tk
     from tkinter import ttk, filedialog, messagebox
     window = tk.Tk(); window.title('Happy Wars Recompiled Builder')
+    self_test = '--self-test-report' in sys.argv
+    if self_test: window.withdraw()
     style = ttk.Style(window)
     if 'vista' in style.theme_names(): style.theme_use('vista')
     frame = ttk.Frame(window, padding=12); frame.grid(sticky='nsew')
@@ -217,7 +219,16 @@ def main():
     open_button=ttk.Button(frame,text='Open game folder',command=lambda:os.startfile(result['path'].parent))
     open_button.grid(row=8,column=0,columnspan=2,sticky='w'); open_button.state(['disabled'])
     window.protocol('WM_DELETE_WINDOW',close); window.after(100,poll)
-    window.resizable(True,False); window.mainloop()
+    window.resizable(True,False)
+    if self_test:
+        window.update_idletasks()
+        report = {'title':window.title(),'theme':style.theme_use(),
+            'width':window.winfo_reqwidth(),'height':window.winfo_reqheight(),
+            'bundled_sources':(Path(getattr(sys,'_MEIPASS',ROOT))/'source.zip').is_file()}
+        output=Path(sys.argv[sys.argv.index('--self-test-report')+1])
+        output.write_text(json.dumps(report,indent=2),encoding='utf-8')
+        window.destroy()
+    else: window.mainloop()
 
 if __name__=='__main__':
     main()

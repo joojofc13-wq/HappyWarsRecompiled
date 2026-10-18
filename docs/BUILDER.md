@@ -47,7 +47,7 @@ Linked profile directories and active game processes are rejected.
 
 ## Packaging
 
-Maintainers run `scripts/package_builder.py` with PyInstaller 6.16.0 installed.
+Maintainers run `scripts/package_builder.py` with PyInstaller 6.22.3 installed.
 It audits and embeds the exact Git index and emits the builder, a source/hash
 manifest and `SHA256SUMS.txt` under `build/builder-release`.
 

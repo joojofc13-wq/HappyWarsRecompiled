@@ -73,5 +73,9 @@
     "url": "https://download.visualstudio.microsoft.com/download/pr/c95450be-0a45-4779-b142-33f567ccfd6e/a871a5ff41acebbe5037455fd6f51fcd4907b47d8f3c9860871ea0b222a2fd45/VisualStudio.vsman",
     "sha256": "99dda859c4ae3c446eb25620d1a6237bb135d95d14d55cd1d30a15340bb39d80",
     "version": "17.14.42"
+  },
+  "builder_packages": {
+    "pyinstaller": "6.22.3",
+    "pyinstaller-hooks-contrib": "2026.8"
   }
 }

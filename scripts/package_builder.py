@@ -11,6 +11,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 if __name__ == '__main__':
     audit()
+    import PyInstaller
+    required=json.loads((ROOT/'config/upstream-lock.json').read_text())['builder_packages']['pyinstaller']
+    if PyInstaller.__version__ != required:
+        raise SystemExit('Install the pinned PyInstaller version: '+required)
     output = ROOT/'build/builder-release'
     output.mkdir(parents=True, exist_ok=True)
     source = output/'source.zip'
