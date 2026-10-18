@@ -61,7 +61,7 @@ Storage tests pass, but complete in-game save loading remains unfinished.
 
 ## Known Issues
 
-Startup is still unstable. The latest local-service build reaches storage reads and writes, then encounters a guest access violation. The mode menu and a playable match have not been confirmed. Intro performance is poor, and no FPS improvement has been measured.
+Startup is still unstable. The latest local-service build reaches storage reads and writes, then encounters a guest access violation. Crash before getting into the menu.
 
 See [STATUS.md](STATUS.md) for validation and [save-service analysis](docs/SAVE_SERVICE_ANALYSIS.md) for the current investigation.
 
