@@ -73,15 +73,21 @@ ImFont* LoadGameFpsFont(ImFontAtlas* atlas) {
   if(!length || length==32768) throw std::runtime_error("Cannot locate FPS font directory");
   const auto file=std::filesystem::path(executable).parent_path()/"fonts/happywars-fps.ttf";
   if(!std::filesystem::exists(file)) {
-    REXLOG_INFO("FPS overlay disabled: optional original game font was not supplied");
-    return nullptr;
+    ImFontConfig config{};
+    config.SizePixels=28;
+    REXLOG_INFO("FPS overlay uses the built-in font; original game font was not supplied");
+    return atlas->AddFontDefault(&config);
   }
   const auto path=file.u8string();
   ImFontConfig config{};
   config.OversampleH=2;config.OversampleV=2;
   static const ImWchar ranges[]={32,32,46,46,48,57,70,70,80,80,83,83,0};
   auto* font=atlas->AddFontFromFileTTF(reinterpret_cast<const char*>(path.c_str()),28,&config,ranges);
-  if(!font) throw std::runtime_error("Cannot load the original game font");
+  if(!font) {
+    REXLOG_WARN("Cannot load the original game font; using the built-in FPS font");
+    config.SizePixels=28;
+    return atlas->AddFontDefault(&config);
+  }
   REXLOG_INFO("FPS overlay uses the original FOT-Rowdy outlines");
   return font;
 }

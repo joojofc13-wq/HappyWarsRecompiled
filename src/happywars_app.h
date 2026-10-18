@@ -10,6 +10,7 @@
 #include "local_http.h"
 #include "crash_diagnostics.h"
 #include "fps_overlay.h"
+#include "performance.h"
 #include <rex/ui/keybinds.h>
 #include <rex/filesystem.h>
 #include <rex/cvar.h>
@@ -27,6 +28,7 @@ class HappyWarsApp : public rex::ReXApp {
   }
 
   void OnPreSetup(rex::RuntimeConfig& config) override {
+    ConfigureGamePerformance();
     if (config.gpu_plugin.empty()) config.gpu_plugin = "xenos";
   }
   void OnConfigurePaths(rex::PathConfig& paths) override {

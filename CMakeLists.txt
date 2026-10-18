@@ -106,6 +106,16 @@ if(HAPPYWARS_TEST_TRANSLATION)
     endif()
 endif()
 
+if(BUILD_TESTING AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/private/tests/native_memory_original.cpp")
+    find_package(rexglue CONFIG REQUIRED)
+        add_executable(native_memory_test tests/native_memory_test.cpp runtime/native_memory.cpp private/tests/native_memory_original.cpp)
+        target_compile_definitions(native_memory_test PRIVATE HAPPYWARS_TU46=1)
+        target_include_directories(native_memory_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+        target_link_libraries(native_memory_test PRIVATE rex::runtime)
+        rexglue_apply_target_settings(native_memory_test)
+        add_test(NAME native_memory COMMAND native_memory_test)
+    endif()
+
 if(HAPPYWARS_BUILD_GAME)
 include(generated/rexglue.cmake)
 set(REXGLUE_CODEGEN_EXECUTABLE "" CACHE FILEPATH "Patched AOT codegen CLI; runtime still uses the pinned SDK")
@@ -140,7 +150,9 @@ set(HAPPYWARS_SOURCES
     runtime/local_stats_enumerator.cpp
     runtime/local_live_network.cpp
     runtime/local_tickets.cpp
+    runtime/native_memory.cpp
     runtime/local_premium.cpp
+    runtime/performance.cpp
     runtime/fps_overlay.cpp
     runtime/verified_callbacks.cpp
     runtime/function_registration.cpp
