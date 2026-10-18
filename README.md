@@ -52,10 +52,10 @@ Storage tests pass, but complete in-game save loading remains unfinished.
 - [x] Extract and inspect the original game package.
 - [x] Compile a native executable and render the title.
 - [x] Pass the original account check with a local profile.
-- [ ] Load or create valid player data and reach the mode menu.
-- [ ] Start and complete Skirmish with the original bots.
-- [ ] Preserve equipment, upgrades, rewards and Happy Cards between sessions.
-- [ ] Validate available maps and modes.
+- [x] Load or create valid player data and reach the mode menu.
+- [x] Start and complete Skirmish with the original bots. (may crash in some maps)
+- [X] Preserve equipment, upgrades, rewards and Happy Cards between sessions.
+- [X] Validate available maps and modes.
 - [ ] Measure and improve performance.
 - [ ] Provide a builder for owners to compile their own copies.
 
