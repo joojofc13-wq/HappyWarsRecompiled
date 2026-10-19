@@ -16,7 +16,9 @@ def build(settings, jobs=2):
     revision=subprocess.check_output(['git','rev-parse','HEAD'],cwd=source,text=True).strip()
     if revision != locked:
         raise RuntimeError('The Vulkan plugin requires the pinned ReXGlue source revision: '+locked)
-    patches=[ROOT/'patches/rexglue-vulkan-rendering-attachments.patch']
+    patches=[ROOT/'patches'/name for name in (
+        'rexglue-vulkan-rendering-attachments.patch',
+        'rexglue-vulkan-render-diagnostics.patch')]
     for patch in patches:
         # Preserve existing SDK edits. Recognize an applied patch before trying
         # to apply it, and reject conflicting changes without resetting files.

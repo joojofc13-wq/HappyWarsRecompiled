@@ -87,12 +87,16 @@ class PlaytestTests(unittest.TestCase):
             config=root/'private/gpu-settings.json'
             config.write_text(json.dumps({'gpu':'vulkan','vulkan_device':0,
                                           'vulkan_validation_enabled':False,
-                                          'vulkan_dynamic_rendering':False}))
+                                          'vulkan_dynamic_rendering':False,
+                                          'vulkan_render_diagnostics':True,
+                                          'render_target_path_vulkan':'fsi'}))
             def process(command,**kwargs):
                 self.assertIn('--gpu=vulkan',command)
                 self.assertIn('--vulkan_device=0',command)
                 self.assertIn('--vulkan_validation_enabled=false',command)
                 self.assertIn('--vulkan_dynamic_rendering=false',command)
+                self.assertIn('--vulkan_render_diagnostics=true',command)
+                self.assertIn('--render_target_path_vulkan=fsi',command)
                 self.assertFalse(any(a.startswith('--render_target_path_d3d12=') for a in command))
                 log=Path(next(a.split('=',1)[1] for a in command if a.startswith('--log_file=')))
                 log.write_text('[error] [gpu] Failed to submit a Vulkan command buffer\n')

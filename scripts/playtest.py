@@ -96,7 +96,7 @@ def launch(label='', root=ROOT, profile=None, update=None):
             selected = {}
             for key in ('d3d12_bindless', 'd3d12_debug', 'd3d12_tiled_shared_memory',
                         'd3d12_gpu_based_validation', 'vulkan_validation_enabled',
-                        'vulkan_dynamic_rendering'):
+                        'vulkan_dynamic_rendering', 'vulkan_render_diagnostics'):
                 if key not in gpu:
                     continue
                 if type(gpu[key]) is not bool:
@@ -115,6 +115,12 @@ def launch(label='', root=ROOT, profile=None, update=None):
                     raise ValueError('vulkan_device must be an integer between -1 and 31')
                 command.append('--vulkan_device='+str(device))
                 selected['vulkan_device']=device
+            if 'render_target_path_vulkan' in gpu:
+                path=gpu['render_target_path_vulkan']
+                if path not in ('any','fbo','fsi'):
+                    raise ValueError('render_target_path_vulkan must be any, fbo or fsi')
+                command.append('--render_target_path_vulkan='+path)
+                selected['render_target_path_vulkan']=path
             if 'render_target_path_d3d12' in gpu:
                 path=gpu['render_target_path_d3d12']
                 if path not in ('rtv','rov'):

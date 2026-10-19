@@ -7,10 +7,14 @@ remains at its original 30 FPS target. The FPS counter and per-run logs remain.
 
 The local test selected the Radeon RX 6650 XT and rendered the menus, but match
 scenes appeared black while the HUD remained visible. Fixing invalid structure
-headers in unused color attachment slots did not resolve this symptom. A second
-test disables dynamic rendering to isolate the Vulkan render pass path; its
-result is pending. The public Builder has not yet been updated to distribute
-this experimental plugin.
+headers in unused color attachment slots did not resolve this symptom. Disabling
+dynamic rendering also left match scenes black. Draw counters confirm that
+indexed scene draws reach the Vulkan command buffer without being skipped as
+incomplete shaders. No host occlusion queries were observed in that test.
+The match test with the Khronos validation layer recorded no VUID messages and
+ran substantially slower, so validation is disabled again. A comparison using
+`render_target_path_vulkan = "fsi"` is pending. The public Builder has not yet
+been updated to distribute this experimental plugin.
 
 ## Build the plugin
 
@@ -45,3 +49,9 @@ For the render pass diagnostic, set `vulkan_dynamic_rendering = false` in the
 TOML file, or use the boolean `vulkan_dynamic_rendering` in Playtest's settings.
 Both paths still use Vulkan. This is an investigation setting, not a verified
 fix for black match scenes.
+
+`vulkan_render_diagnostics = true` adds a compact summary every 150 frames. It
+counts submitted draws, early skips, indexed draws, resolves and occlusion
+results without logging each draw. It is disabled by default. Setting
+`vulkan_validation_enabled = true` requests the Khronos validation layer, which
+must be available separately; verify its name in the enabled-layer startup log.

@@ -42,5 +42,6 @@ file(GLOB VULKAN_UI_SOURCES CONFIGURE_DEPENDS ${REXGLUE_ROOT}/src/ui/vulkan/*.cp
 target_sources(rexgpu-xenos PRIVATE ${VULKAN_UI_SOURCES})
 target_compile_definitions(rexgpu-xenos PRIVATE REX_HAS_VULKAN=1 REX_HAS_D3D12=0)
 target_include_directories(rexgpu-xenos PRIVATE ${REXGLUE_ROOT}/src)
+target_include_directories(rexgpu-xenos BEFORE PRIVATE ${REXGLUE_ROOT}/include)
 target_link_libraries(rexgpu-xenos PRIVATE spirv-tools-headers)
 rexglue_apply_target_settings(rexgpu-xenos)
