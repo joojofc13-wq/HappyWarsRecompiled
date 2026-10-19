@@ -1,0 +1,142 @@
+diff --git a/src/graphics/d3d12/graphics_system.cpp b/src/graphics/d3d12/graphics_system.cpp
+--- a/src/graphics/d3d12/graphics_system.cpp
++++ b/src/graphics/d3d12/graphics_system.cpp
+@@ -10,7 +10,12 @@
+  */
+ 
+ #include <algorithm>
++#include <atomic>
++#include <mutex>
++#include <unordered_map>
++#include <vector>
+ 
++#include <rex/cvar.h>
+ #include <rex/graphics/d3d12/command_processor.h>
+ #include <rex/graphics/d3d12/graphics_system.h>
+ #include <rex/graphics/util/draw.h>
+@@ -19,7 +24,51 @@
+ #include <rex/system/kernel_state.h>
+ #include <rex/ui/d3d12/d3d12_util.h>
+ 
++REXCVAR_DEFINE_BOOL(d3d12_gpu_based_validation, false, "GPU/D3D12",
++                   "Instrument GPU shader accesses for diagnosis (very slow)")
++    .lifecycle(rex::cvar::Lifecycle::kInitOnly);
++
+ namespace rex::graphics::d3d12 {
++
++namespace {
++void CALLBACK ValidationMessage(D3D12_MESSAGE_CATEGORY, D3D12_MESSAGE_SEVERITY severity,
++                                D3D12_MESSAGE_ID id, LPCSTR description, void*) {
++  // The callback may run on a driver thread. Do not call D3D12 APIs here.
++  static std::atomic<unsigned> warnings{0}, errors{0};
++  if (severity <= D3D12_MESSAGE_SEVERITY_ERROR) {
++    if (errors.fetch_add(1, std::memory_order_relaxed) < 1024)
++      REXGPU_ERROR("D3D12 validation [{}]: {}", unsigned(id), description);
++  } else if (severity == D3D12_MESSAGE_SEVERITY_WARNING &&
++             warnings.fetch_add(1, std::memory_order_relaxed) < 128) {
++    REXGPU_WARN("D3D12 validation [{}]: {}", unsigned(id), description);
++  }
++}
++}  // namespace
++
++void LogD3D12ValidationMessages(ID3D12Device* device) {
++  if (!REXCVAR_GET(d3d12_gpu_based_validation)) return;
++  // Windows 10 does not expose ID3D12InfoQueue1 callbacks. Poll the original
++  // interface instead, retaining a cursor so asynchronous messages aren't
++  // discarded by ClearStoredMessages while a shader is still reporting them.
++  Microsoft::WRL::ComPtr<ID3D12InfoQueue> messages;
++  if (FAILED(device->QueryInterface(IID_PPV_ARGS(&messages)))) return;
++  static std::mutex mutex;
++  static std::unordered_map<ID3D12Device*, UINT64> cursors;
++  std::lock_guard lock(mutex);
++  auto& cursor = cursors[device];
++  const auto count = messages->GetNumStoredMessagesAllowedByRetrievalFilter();
++  if (cursor > count) cursor = 0;
++  for (; cursor < count; ++cursor) {
++    SIZE_T size = 0;
++    if (FAILED(messages->GetMessage(cursor, nullptr, &size)) || size > 1024 * 1024)
++      continue;
++    std::vector<uint8_t> storage(size);
++    auto* message = reinterpret_cast<D3D12_MESSAGE*>(storage.data());
++    if (SUCCEEDED(messages->GetMessage(cursor, message, &size)))
++      ValidationMessage(message->Category, message->Severity, message->ID,
++                        message->pDescription, nullptr);
++  }
++}
+ 
+ D3D12GraphicsSystem::D3D12GraphicsSystem() {}
+ 
+@@ -38,9 +87,45 @@
+ }
+ 
+ void D3D12GraphicsSystem::CreateProvider(bool /*with_presentation*/) {
++  HMODULE validation_library = nullptr;
++  if (REXCVAR_GET(d3d12_gpu_based_validation)) {
++    // Enable before the first device, including the provider's adapter probes.
++    validation_library = LoadLibraryW(L"D3D12.dll");
++    auto get_debug = validation_library ? reinterpret_cast<PFN_D3D12_GET_DEBUG_INTERFACE>(
++        GetProcAddress(validation_library, "D3D12GetDebugInterface")) : nullptr;
++    Microsoft::WRL::ComPtr<ID3D12Debug1> debug;
++    const HRESULT result = get_debug ? get_debug(IID_PPV_ARGS(&debug)) : E_NOINTERFACE;
++    if (SUCCEEDED(result)) {
++      debug->EnableDebugLayer();
++      debug->SetEnableGPUBasedValidation(TRUE);
++      REXGPU_INFO("D3D12 GPU-based validation enabled before device creation");
++    }
++    debug.Reset();
++    if (FAILED(result)) {
++      if (validation_library) FreeLibrary(validation_library);
++      rex::FatalError(fmt::format("GPU-based validation is unavailable (HRESULT 0x{:08X}). "
++                      "This diagnostic test cannot run without its matching SDK layers.",
++                      unsigned(result)));
++      return;
++    }
++  }
+   // D3D12 doesn't differentiate headless vs. swapchain-capable providers;
+   // swapchains are created lazily per-window by the presenter.
+   provider_ = rex::ui::d3d12::D3D12Provider::Create();
++  // The provider now owns a runtime reference, preserving the debug settings.
++  if (validation_library) FreeLibrary(validation_library);
++  if (provider_ && REXCVAR_GET(d3d12_gpu_based_validation)) {
++    auto* device = static_cast<rex::ui::d3d12::D3D12Provider*>(provider_.get())->GetDevice();
++    Microsoft::WRL::ComPtr<ID3D12InfoQueue> messages;
++    const HRESULT result = device->QueryInterface(IID_PPV_ARGS(&messages));
++    if (SUCCEEDED(result)) {
++      messages->SetMessageCountLimit(16384);
++      REXGPU_INFO("D3D12 validation messages are captured in the game log");
++      LogD3D12ValidationMessages(device);
++    } else {
++      rex::FatalError("Cannot capture D3D12 GPU validation messages in this diagnostic test.");
++    }
++  }
+ }
+ 
+ std::unique_ptr<CommandProcessor> D3D12GraphicsSystem::CreateCommandProcessor() {
+diff --git a/src/graphics/d3d12/command_processor.cpp b/src/graphics/d3d12/command_processor.cpp
+--- a/src/graphics/d3d12/command_processor.cpp
++++ b/src/graphics/d3d12/command_processor.cpp
+@@ -48,6 +48,8 @@
+     .lifecycle(rex::cvar::Lifecycle::kHotReload);
+ 
+ namespace rex::graphics::d3d12 {
++
++void LogD3D12ValidationMessages(ID3D12Device* device);
+ 
+ // Generated with `xb buildshaders`.
+ namespace shaders {
+@@ -3196,6 +3198,7 @@
+ }
+ 
+ void D3D12CommandProcessor::LogDeviceRemovalDiagnostics(ID3D12Device* device, HRESULT reason) {
++  LogD3D12ValidationMessages(device);
+   const char* reason_str = "Unknown";
+   switch (reason) {
+     case DXGI_ERROR_DEVICE_HUNG:
+@@ -3281,6 +3284,7 @@
+ 
+   // Check if the device is still available.
+   ID3D12Device* device = GetD3D12Provider().GetDevice();
++  LogD3D12ValidationMessages(device);
+   HRESULT device_removed_reason = device->GetDeviceRemovedReason();
+   if (FAILED(device_removed_reason)) {
+     device_removed_ = true;

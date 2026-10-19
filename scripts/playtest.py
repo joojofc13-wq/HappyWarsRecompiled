@@ -78,7 +78,8 @@ def launch(label='', root=ROOT, profile=None, update=None):
     session = {'id': identity, 'label': label, 'log': log.relative_to(root).as_posix(),
         'executable_sha256': digest,
         'runtime_libraries_sha256': {name:hashlib.sha256((executable.parent/name).read_bytes()).hexdigest()
-            for name in ('rexruntime.dll','rexgpu-xenos.dll') if (executable.parent/name).is_file()},
+            for name in ('rexruntime.dll','rexgpu-xenos.dll','D3D12/D3D12Core.dll',
+                         'D3D12/d3d12SDKLayers.dll') if (executable.parent/name).is_file()},
         'state': 'starting'}
     def save():
         pending = manifest.with_suffix('.tmp')
@@ -90,7 +91,8 @@ def launch(label='', root=ROOT, profile=None, update=None):
         if gpu_path.exists():
             gpu = json.loads(gpu_path.read_text(encoding='utf-8'))
             selected = {}
-            for key in ('d3d12_bindless', 'd3d12_debug', 'd3d12_tiled_shared_memory'):
+            for key in ('d3d12_bindless', 'd3d12_debug', 'd3d12_tiled_shared_memory',
+                        'd3d12_gpu_based_validation'):
                 if key not in gpu:
                     continue
                 if type(gpu[key]) is not bool:

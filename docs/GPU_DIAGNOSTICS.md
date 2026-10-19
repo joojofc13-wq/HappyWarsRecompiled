@@ -58,3 +58,29 @@ ROV uses a different render-target implementation; it can trade performance for
 accuracy. Early shader compilation caused very low frame rates in this trial.
 A live process or a few rendered frames do not establish stable gameplay.
 See the [Xenia render-path options](https://github.com/xenia-canary/xenia-canary/wiki/Options).
+
+The first ROV session survived the previously failing sections according to the
+tester, but frame rates were poor. The next ROV session, with validation disabled,
+failed with the same DEVICE_HUNG result. ROV is therefore not a confirmed fix.
+
+## GPU access validation
+
+The earlier debug-enabled runs reported that the D3D12 debug layer could not be
+loaded. DRED was active, but shader-access validation was not. The local
+development machine now has the Windows Graphics Tools capability installed.
+
+`patches/rexglue-gpu-validation.patch` adds an opt-in
+`d3d12_gpu_based_validation` flag to the diagnostic plugin. Apply it after the
+allocation and queue-fence patches. It enables validation before device creation
+and reads the D3D12 information queue into the game log. Queue polling supports
+Windows 10, where the newer message-callback interface is unavailable.
+
+The current local diagnostic executable selects Agility SDK 619 with matching
+app-local core and debug-layer binaries. The playtest manifest records their
+hashes. Both validation activation and log capture were verified at startup.
+Shader compilation and execution can be much slower under this instrumentation;
+these runs must not be used as performance benchmarks. This is a diagnostic
+configuration, not a public gameplay default or a verified crash fix.
+
+See Microsoft's [GPU-based validation documentation](https://learn.microsoft.com/en-us/windows/win32/direct3d12/using-d3d12-debug-layer-gpu-based-validation)
+and [Agility SDK setup](https://devblogs.microsoft.com/directx/gettingstarted-dx12agility/).
