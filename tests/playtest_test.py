@@ -86,11 +86,13 @@ class PlaytestTests(unittest.TestCase):
             (root/'game/Default.xex').touch();(root/'HappyWars.exe').write_bytes(b'fixture')
             config=root/'private/gpu-settings.json'
             config.write_text(json.dumps({'gpu':'vulkan','vulkan_device':0,
-                                          'vulkan_validation_enabled':False}))
+                                          'vulkan_validation_enabled':False,
+                                          'vulkan_dynamic_rendering':False}))
             def process(command,**kwargs):
                 self.assertIn('--gpu=vulkan',command)
                 self.assertIn('--vulkan_device=0',command)
                 self.assertIn('--vulkan_validation_enabled=false',command)
+                self.assertIn('--vulkan_dynamic_rendering=false',command)
                 self.assertFalse(any(a.startswith('--render_target_path_d3d12=') for a in command))
                 log=Path(next(a.split('=',1)[1] for a in command if a.startswith('--log_file=')))
                 log.write_text('[error] [gpu] Failed to submit a Vulkan command buffer\n')

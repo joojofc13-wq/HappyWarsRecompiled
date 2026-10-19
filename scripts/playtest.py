@@ -95,7 +95,8 @@ def launch(label='', root=ROOT, profile=None, update=None):
             gpu = json.loads(gpu_path.read_text(encoding='utf-8'))
             selected = {}
             for key in ('d3d12_bindless', 'd3d12_debug', 'd3d12_tiled_shared_memory',
-                        'd3d12_gpu_based_validation', 'vulkan_validation_enabled'):
+                        'd3d12_gpu_based_validation', 'vulkan_validation_enabled',
+                        'vulkan_dynamic_rendering'):
                 if key not in gpu:
                     continue
                 if type(gpu[key]) is not bool:

@@ -6,10 +6,11 @@ implementation that the original runtime package did not provide. Guest timing
 remains at its original 30 FPS target. The FPS counter and per-run logs remain.
 
 The local test selected the Radeon RX 6650 XT and rendered the menus, but match
-scenes appeared black while the HUD remained visible. A fix for invalid Vulkan
-structure headers in unused color attachment slots is installed for testing.
-Its effect on match rendering remains unverified. The public Builder has not yet
-been updated to distribute this experimental plugin.
+scenes appeared black while the HUD remained visible. Fixing invalid structure
+headers in unused color attachment slots did not resolve this symptom. A second
+test disables dynamic rendering to isolate the Vulkan render pass path; its
+result is pending. The public Builder has not yet been updated to distribute
+this experimental plugin.
 
 ## Build the plugin
 
@@ -39,3 +40,8 @@ Device selection is automatic unless `vulkan_device` is specified. In the local
 test, index 0 was the RX 6650 XT and index 1 was the integrated GPU. Device indices
 can differ on another PC. Playtest also accepts these settings in its optional
 `private/gpu-settings.json` and records them in each session manifest.
+
+For the render pass diagnostic, set `vulkan_dynamic_rendering = false` in the
+TOML file, or use the boolean `vulkan_dynamic_rendering` in Playtest's settings.
+Both paths still use Vulkan. This is an investigation setting, not a verified
+fix for black match scenes.
