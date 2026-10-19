@@ -1,0 +1,70 @@
+diff --git a/src/graphics/graphics_system.cpp b/src/graphics/graphics_system.cpp
+--- a/src/graphics/graphics_system.cpp
++++ b/src/graphics/graphics_system.cpp
+@@ -30,6 +30,14 @@
+ #include <rex/ui/graphics_provider.h>
+ #include <rex/ui/window.h>
+ #include <rex/ui/windowed_app_context.h>
++
++#if REX_HAS_D3D12
++#include <rex/ui/d3d12/d3d12_provider.h>
++namespace rex::graphics::d3d12 {
++void LogD3D12ValidationMessages(ID3D12Device* device);
++void LogD3D12DeviceRemovalDiagnostics(ID3D12Device* device, HRESULT reason);
++}
++#endif
+ 
+ REXCVAR_DEFINE_STRING(swap_post_effect, "none", "GPU", "Swap post effect: none, fxaa, fxaa_extreme")
+     .allowed({"none", "fxaa", "fxaa_extreme"})
+@@ -217,6 +225,19 @@
+   if (host_gpu_loss_reported_.test_and_set(std::memory_order_relaxed)) {
+     return;
+   }
++#if REX_HAS_D3D12
++  // Present may detect loss before the command processor checks its fence.
++  // Capture diagnostics here too, before FatalError aborts the process.
++  if (auto* provider = dynamic_cast<rex::ui::d3d12::D3D12Provider*>(provider_.get())) {
++    auto* device = provider->GetDevice();
++    const HRESULT reason = device->GetDeviceRemovedReason();
++    REXGPU_ERROR("Presentation reported GPU loss: responsible={}, reason=0x{:08X}",
++                 is_responsible, unsigned(reason));
++    d3d12::LogD3D12ValidationMessages(device);
++    if (FAILED(reason)) d3d12::LogD3D12DeviceRemovalDiagnostics(device, reason);
++  }
++#endif
++  rex::FlushLogging();
+   rex::FatalError("Graphics device lost (probably due to an internal error)");
+ }
+ 
+diff --git a/src/graphics/d3d12/command_processor.cpp b/src/graphics/d3d12/command_processor.cpp
+--- a/src/graphics/d3d12/command_processor.cpp
++++ b/src/graphics/d3d12/command_processor.cpp
+@@ -3197,7 +3197,7 @@
+   texture_cache_->CompletedSubmissionUpdated(submission_completed_);
+ }
+ 
+-void D3D12CommandProcessor::LogDeviceRemovalDiagnostics(ID3D12Device* device, HRESULT reason) {
++void LogD3D12DeviceRemovalDiagnostics(ID3D12Device* device, HRESULT reason) {
+   LogD3D12ValidationMessages(device);
+   const char* reason_str = "Unknown";
+   switch (reason) {
+@@ -3230,7 +3230,7 @@
+     for (const D3D12_AUTO_BREADCRUMB_NODE* node = breadcrumbs.pHeadAutoBreadcrumbNode; node;
+          node = node->pNext) {
+       if (!node->pLastBreadcrumbValue || !node->pCommandHistory ||
+-          *node->pLastBreadcrumbValue == 0) {
++          node->BreadcrumbCount == 0) {
+         continue;
+       }
+       const uint32_t completed = *node->pLastBreadcrumbValue;
+@@ -3266,6 +3266,10 @@
+     allocations("live", page_fault.pHeadExistingAllocationNode);
+     allocations("recently freed", page_fault.pHeadRecentFreedAllocationNode);
+   }
++}
++
++void D3D12CommandProcessor::LogDeviceRemovalDiagnostics(ID3D12Device* device, HRESULT reason) {
++  LogD3D12DeviceRemovalDiagnostics(device, reason);
+ }
+ 
+ bool D3D12CommandProcessor::BeginSubmission(bool is_guest_command) {

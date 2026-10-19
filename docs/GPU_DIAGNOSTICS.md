@@ -91,3 +91,17 @@ uses RTV with GPU-based validation disabled. Ordinary CPU-side D3D12 validation
 and DRED remain enabled, and the diagnostic plugin captures their messages too.
 The title resumed submitting frames at approximately 30 FPS during startup.
 This verifies recovery from the diagnostic black screen, not match stability.
+
+## Presentation-side device loss
+
+The CPU-validation trial exited during a match with the generic graphics-device
+loss message, but no command-processor device-removal details. The presenter can
+report loss first; its callback aborted immediately before the other thread
+reached the diagnostic path.
+
+`patches/rexglue-present-loss-diagnostics.patch` queries the device-removal reason
+and captures the information queue and DRED output from that callback before
+flushing the logs and aborting. Breadcrumbs with zero completed operations are
+included because the first operation may be the one that failed. Apply this
+patch after the preceding three patches. This closes a diagnostic gap and does
+not fix the device loss itself.
