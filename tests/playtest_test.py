@@ -80,6 +80,33 @@ class PlaytestTests(unittest.TestCase):
             (directory/'normal.json').write_text(json.dumps({'log': 'logs/playtests/normal.log'}))
             self.assertEqual(playtest.summarize(root)['missing_functions'], [])
 
+    def test_vulkan_launch_records_backend_and_its_gpu_failure(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);(root/'game').mkdir();(root/'private').mkdir()
+            (root/'game/Default.xex').touch();(root/'HappyWars.exe').write_bytes(b'fixture')
+            config=root/'private/gpu-settings.json'
+            config.write_text(json.dumps({'gpu':'vulkan','vulkan_device':0,
+                                          'vulkan_validation_enabled':False}))
+            def process(command,**kwargs):
+                self.assertIn('--gpu=vulkan',command)
+                self.assertIn('--vulkan_device=0',command)
+                self.assertIn('--vulkan_validation_enabled=false',command)
+                self.assertFalse(any(a.startswith('--render_target_path_d3d12=') for a in command))
+                log=Path(next(a.split('=',1)[1] for a in command if a.startswith('--log_file=')))
+                log.write_text('[error] [gpu] Failed to submit a Vulkan command buffer\n')
+                result=unittest.mock.Mock(pid=456);result.wait.return_value=9;return result
+            with patch.object(playtest.subprocess,'Popen',side_effect=process):
+                session=playtest.launch('Vulkan',root)
+            report=playtest.summarize(root)
+            self.assertEqual(session['gpu_settings']['gpu'],'vulkan')
+            self.assertEqual(report['sessions'][0]['exit_code'],9)
+            self.assertEqual(len(report['sessions'][0]['gpu_errors']),1)
+            self.assertEqual(report['missing_functions'],[])
+            config.write_text(json.dumps({'gpu':'vulkan','vulkan_device':True}))
+            with patch.object(playtest.subprocess,'Popen') as launch:
+                self.assertEqual(playtest.launch('bad device',root)['state'],'launch_failed')
+                launch.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()

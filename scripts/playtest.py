@@ -12,6 +12,9 @@ import uuid
 
 ROOT = Path(sys.executable).resolve().parent if getattr(sys,'frozen',False) else Path(__file__).resolve().parents[1]
 FATAL = re.compile(r'Call to invalid or unregistered function at guest address (0x[0-9a-fA-F]+)')
+GPU_FAILURE = re.compile(r'D3D12 device removed:|VK_ERROR_DEVICE_LOST|ErrorDeviceLost|'
+    r'Failed to submit (?:a Vulkan command buffer|Vulkan sparse binds)|'
+    r'VulkanPresenter: Failed to submit',re.IGNORECASE)
 
 
 def summarize(root=ROOT):
@@ -25,7 +28,7 @@ def summarize(root=ROOT):
         addresses = sorted({f'0x{int(a,16):08X}' for a in FATAL.findall(content)})
         session['missing_functions'] = addresses
         session['critical_lines'] = [line for line in content.splitlines() if '[critical]' in line][-8:]
-        session['gpu_errors'] = [line for line in content.splitlines() if 'D3D12 device removed:' in line][-4:]
+        session['gpu_errors'] = [line for line in content.splitlines() if GPU_FAILURE.search(line)][-4:]
         for address in addresses:
             failures[address].append(session['log'])
         sessions.append(session)
@@ -40,7 +43,7 @@ def summarize(root=ROOT):
         relative=log.relative_to(root).as_posix()
         session=dict(log=relative,state='unsupervised',missing_functions=addresses,
             critical_lines=[line for line in content.splitlines() if '[critical]' in line][-8:],
-            gpu_errors=[line for line in content.splitlines() if 'D3D12 device removed:' in line][-4:])
+            gpu_errors=[line for line in content.splitlines() if GPU_FAILURE.search(line)][-4:])
         for address in addresses: failures[address].append(relative)
         sessions.append(session)
     report = {'sessions': sessions, 'missing_functions': [
@@ -92,13 +95,25 @@ def launch(label='', root=ROOT, profile=None, update=None):
             gpu = json.loads(gpu_path.read_text(encoding='utf-8'))
             selected = {}
             for key in ('d3d12_bindless', 'd3d12_debug', 'd3d12_tiled_shared_memory',
-                        'd3d12_gpu_based_validation'):
+                        'd3d12_gpu_based_validation', 'vulkan_validation_enabled'):
                 if key not in gpu:
                     continue
                 if type(gpu[key]) is not bool:
                     raise ValueError(f'{key} must be a boolean')
                 command.append(f'--{key}={str(gpu[key]).lower()}')
                 selected[key] = gpu[key]
+            if 'gpu' in gpu:
+                backend=gpu['gpu']
+                if backend not in ('any','d3d12','vulkan'):
+                    raise ValueError('gpu must be any, d3d12 or vulkan')
+                command.append('--gpu='+backend)
+                selected['gpu']=backend
+            if 'vulkan_device' in gpu:
+                device=gpu['vulkan_device']
+                if type(device) is not int or not -1 <= device <= 31:
+                    raise ValueError('vulkan_device must be an integer between -1 and 31')
+                command.append('--vulkan_device='+str(device))
+                selected['vulkan_device']=device
             if 'render_target_path_d3d12' in gpu:
                 path=gpu['render_target_path_d3d12']
                 if path not in ('rtv','rov'):
