@@ -14,7 +14,7 @@ diff --git a/src/graphics/d3d12/graphics_system.cpp b/src/graphics/d3d12/graphic
  #include <rex/graphics/d3d12/command_processor.h>
  #include <rex/graphics/d3d12/graphics_system.h>
  #include <rex/graphics/util/draw.h>
-@@ -19,7 +24,51 @@
+@@ -19,7 +24,53 @@
  #include <rex/system/kernel_state.h>
  #include <rex/ui/d3d12/d3d12_util.h>
  
@@ -27,7 +27,7 @@ diff --git a/src/graphics/d3d12/graphics_system.cpp b/src/graphics/d3d12/graphic
 +namespace {
 +void CALLBACK ValidationMessage(D3D12_MESSAGE_CATEGORY, D3D12_MESSAGE_SEVERITY severity,
 +                                D3D12_MESSAGE_ID id, LPCSTR description, void*) {
-+  // The callback may run on a driver thread. Do not call D3D12 APIs here.
++  // Keep message formatting separate from D3D12 queue access.
 +  static std::atomic<unsigned> warnings{0}, errors{0};
 +  if (severity <= D3D12_MESSAGE_SEVERITY_ERROR) {
 +    if (errors.fetch_add(1, std::memory_order_relaxed) < 1024)
@@ -40,7 +40,8 @@ diff --git a/src/graphics/d3d12/graphics_system.cpp b/src/graphics/d3d12/graphic
 +}  // namespace
 +
 +void LogD3D12ValidationMessages(ID3D12Device* device) {
-+  if (!REXCVAR_GET(d3d12_gpu_based_validation)) return;
++  if (!REXCVAR_GET(d3d12_gpu_based_validation) &&
++      !rex::cvar::Query<bool>("d3d12_debug")) return;
 +  // Windows 10 does not expose ID3D12InfoQueue1 callbacks. Poll the original
 +  // interface instead, retaining a cursor so asynchronous messages aren't
 +  // discarded by ClearStoredMessages while a shader is still reporting them.
@@ -54,7 +55,8 @@ diff --git a/src/graphics/d3d12/graphics_system.cpp b/src/graphics/d3d12/graphic
 +  if (cursor > count) cursor = 0;
 +  for (; cursor < count; ++cursor) {
 +    SIZE_T size = 0;
-+    if (FAILED(messages->GetMessage(cursor, nullptr, &size)) || size > 1024 * 1024)
++    if (FAILED(messages->GetMessage(cursor, nullptr, &size)) ||
++        size < sizeof(D3D12_MESSAGE) || size > 1024 * 1024)
 +      continue;
 +    std::vector<uint8_t> storage(size);
 +    auto* message = reinterpret_cast<D3D12_MESSAGE*>(storage.data());
@@ -66,7 +68,7 @@ diff --git a/src/graphics/d3d12/graphics_system.cpp b/src/graphics/d3d12/graphic
  
  D3D12GraphicsSystem::D3D12GraphicsSystem() {}
  
-@@ -38,9 +87,45 @@
+@@ -38,9 +89,48 @@
  }
  
  void D3D12GraphicsSystem::CreateProvider(bool /*with_presentation*/) {
@@ -97,7 +99,8 @@ diff --git a/src/graphics/d3d12/graphics_system.cpp b/src/graphics/d3d12/graphic
    provider_ = rex::ui::d3d12::D3D12Provider::Create();
 +  // The provider now owns a runtime reference, preserving the debug settings.
 +  if (validation_library) FreeLibrary(validation_library);
-+  if (provider_ && REXCVAR_GET(d3d12_gpu_based_validation)) {
++  if (provider_ && (REXCVAR_GET(d3d12_gpu_based_validation) ||
++                    rex::cvar::Query<bool>("d3d12_debug"))) {
 +    auto* device = static_cast<rex::ui::d3d12::D3D12Provider*>(provider_.get())->GetDevice();
 +    Microsoft::WRL::ComPtr<ID3D12InfoQueue> messages;
 +    const HRESULT result = device->QueryInterface(IID_PPV_ARGS(&messages));
@@ -105,8 +108,10 @@ diff --git a/src/graphics/d3d12/graphics_system.cpp b/src/graphics/d3d12/graphic
 +      messages->SetMessageCountLimit(16384);
 +      REXGPU_INFO("D3D12 validation messages are captured in the game log");
 +      LogD3D12ValidationMessages(device);
-+    } else {
++    } else if (REXCVAR_GET(d3d12_gpu_based_validation)) {
 +      rex::FatalError("Cannot capture D3D12 GPU validation messages in this diagnostic test.");
++    } else {
++      REXGPU_WARN("D3D12 information queue is unavailable; validation messages cannot be captured");
 +    }
 +  }
  }

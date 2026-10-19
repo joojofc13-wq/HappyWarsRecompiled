@@ -84,3 +84,10 @@ configuration, not a public gameplay default or a verified crash fix.
 
 See Microsoft's [GPU-based validation documentation](https://learn.microsoft.com/en-us/windows/win32/direct3d12/using-d3d12-debug-layer-gpu-based-validation)
 and [Agility SDK setup](https://devblogs.microsoft.com/directx/gettingstarted-dx12agility/).
+
+Full shader instrumentation stalled after the third submitted frame on this
+machine, with a black screen and no useful access errors. The local trial now
+uses RTV with GPU-based validation disabled. Ordinary CPU-side D3D12 validation
+and DRED remain enabled, and the diagnostic plugin captures their messages too.
+The title resumed submitting frames at approximately 30 FPS during startup.
+This verifies recovery from the diagnostic black screen, not match stability.
