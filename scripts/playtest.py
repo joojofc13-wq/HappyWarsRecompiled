@@ -97,6 +97,12 @@ def launch(label='', root=ROOT, profile=None, update=None):
                     raise ValueError(f'{key} must be a boolean')
                 command.append(f'--{key}={str(gpu[key]).lower()}')
                 selected[key] = gpu[key]
+            if 'render_target_path_d3d12' in gpu:
+                path=gpu['render_target_path_d3d12']
+                if path not in ('rtv','rov'):
+                    raise ValueError('render_target_path_d3d12 must be rtv or rov')
+                command.append('--render_target_path_d3d12='+path)
+                selected['render_target_path_d3d12']=path
             session['gpu_settings'] = selected
         session['profile'] = str(profile)
         session['frame_pacing'] = 'original_30_fps'

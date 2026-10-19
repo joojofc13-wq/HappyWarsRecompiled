@@ -54,6 +54,23 @@ class PlaytestTests(unittest.TestCase):
             report=playtest.summarize(root)
             self.assertEqual(len(report['sessions']),2)
             self.assertEqual(report['missing_functions'][0]['address'],'0x834BD2F8')
+    def test_render_path_trial_is_applied_and_invalid_values_do_not_launch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);(root/'game').mkdir();(root/'private').mkdir()
+            (root/'game/Default.xex').touch();(root/'HappyWars.exe').write_bytes(b'fixture')
+            config=root/'private/gpu-settings.json'
+            config.write_text(json.dumps({'render_target_path_d3d12':'rov'}))
+            def process(command,**kwargs):
+                self.assertIn('--render_target_path_d3d12=rov',command)
+                result=unittest.mock.Mock(pid=987);result.wait.return_value=0;return result
+            with patch.object(playtest.subprocess,'Popen',side_effect=process):
+                session=playtest.launch('ROV',root)
+            self.assertEqual(session['gpu_settings']['render_target_path_d3d12'],'rov')
+            config.write_text(json.dumps({'render_target_path_d3d12':'unsupported'}))
+            with patch.object(playtest.subprocess,'Popen') as launch:
+                session=playtest.launch('bad config',root)
+                launch.assert_not_called()
+            self.assertEqual(session['state'],'launch_failed')
     def test_exit_without_missing_function_is_not_classified_as_one(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

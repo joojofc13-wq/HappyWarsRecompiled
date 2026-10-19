@@ -45,3 +45,16 @@ causes the observed gameplay GPU fault still requires a matching playtest.
 The named-allocation trial faulted at `0x0000000343E00000`, outside the logged
 shared-memory and EDRAM buffer ranges. DRED returned no matching live or recently
 freed allocations. This does not establish a resource-lifetime bug by itself.
+
+## Render-path isolation
+
+The fence-correction trial still faulted on the RTV path. The correction fixes a
+real error in fence handling, but is not a verified fix for the observed GPU
+fault. A new isolated trial selects `render_target_path_d3d12=rov`, retaining
+30 FPS pacing, the same profile, committed shared memory and DRED diagnostics.
+The plugin logs the effective path, rather than relying only on requested flags.
+
+ROV uses a different render-target implementation; it can trade performance for
+accuracy. Early shader compilation caused very low frame rates in this trial.
+A live process or a few rendered frames do not establish stable gameplay.
+See the [Xenia render-path options](https://github.com/xenia-canary/xenia-canary/wiki/Options).

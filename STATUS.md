@@ -25,7 +25,7 @@ addresses and boundary declarations. The Windows builder completed a new staged 
 | Marketplace | Warning persists; a valid local catalog protocol remains unfinished |
 | Tickets and Premium | Local ticket hooks and permanent Premium policy implemented; ticket spending and Premium reward/UI effects need validation |
 | Maps and modes | Full coverage, match completion and rewards remain unverified |
-| GPU stability | Bindless-off and committed shared memory trials both failed; allocation-name diagnostics prepared |
+| GPU stability | Bindless-off and committed shared memory trials both failed; allocation-name diagnostics and fence correction did not eliminate the fault; ROV trial running |
 | Frame pacing | Original 30 FPS pacing restored after instability with experimental 60 FPS |
 | Build updates | Existing standalone runtime updates preserve profiles and game files, with backups and rollback tests |
 | Distribution | Windows builder and public sources; no playable game binary or assets |

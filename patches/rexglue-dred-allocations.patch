@@ -1,8 +1,20 @@
 diff --git a/src/graphics/d3d12/command_processor.cpp b/src/graphics/d3d12/command_processor.cpp
-index 19874a5..35f84af 100644
 --- a/src/graphics/d3d12/command_processor.cpp
 +++ b/src/graphics/d3d12/command_processor.cpp
-@@ -3244,6 +3244,22 @@ void D3D12CommandProcessor::LogDeviceRemovalDiagnostics(ID3D12Device* device, HR
+@@ -3229,9 +3229,10 @@
+           *node->pLastBreadcrumbValue == 0) {
+         continue;
+       }
+-      REXGPU_ERROR("DRED breadcrumb: completed {} of {} ops", *node->pLastBreadcrumbValue,
++      const uint32_t completed = *node->pLastBreadcrumbValue;
++      REXGPU_ERROR("DRED breadcrumb: completed {} of {} ops", completed,
+                    node->BreadcrumbCount);
+-      uint32_t last = std::min(*node->pLastBreadcrumbValue, node->BreadcrumbCount);
++      uint32_t last = std::min(completed, node->BreadcrumbCount);
+       uint32_t start = last > 3 ? last - 3 : 0;
+       uint32_t end = std::min(last + 1, node->BreadcrumbCount);
+       for (uint32_t i = start; i < end; i++) {
+@@ -3244,6 +3245,22 @@
    D3D12_DRED_PAGE_FAULT_OUTPUT page_fault = {};
    if (SUCCEEDED(dred->GetPageFaultAllocationOutput(&page_fault)) && page_fault.PageFaultVA != 0) {
      REXGPU_ERROR("DRED page fault at VA 0x{:016X}", page_fault.PageFaultVA);
@@ -25,26 +37,10 @@ index 19874a5..35f84af 100644
    }
  }
  
-diff --git a/src/graphics/d3d12/render_target_cache.cpp b/src/graphics/d3d12/render_target_cache.cpp
-index dd321a5..0ba9cd8 100644
---- a/src/graphics/d3d12/render_target_cache.cpp
-+++ b/src/graphics/d3d12/render_target_cache.cpp
-@@ -221,6 +221,10 @@ bool D3D12RenderTargetCache::Initialize() {
-     Shutdown();
-     return false;
-   }
-+  edram_buffer_->SetName(L"Xenos EDRAM buffer");
-+  REXGPU_INFO("EDRAM buffer GPU VA: 0x{:016X}-0x{:016X}",
-+              edram_buffer_->GetGPUVirtualAddress(),
-+              edram_buffer_->GetGPUVirtualAddress()+edram_buffer_->GetDesc().Width);
-   edram_buffer_->SetName(L"EDRAM Buffer");
-   edram_buffer_modification_status_ = EdramBufferModificationStatus::kUnmodified;
- 
 diff --git a/src/graphics/d3d12/shared_memory.cpp b/src/graphics/d3d12/shared_memory.cpp
-index a5c97a0..21e8f53 100644
 --- a/src/graphics/d3d12/shared_memory.cpp
 +++ b/src/graphics/d3d12/shared_memory.cpp
-@@ -78,7 +78,10 @@ bool D3D12SharedMemory::Initialize() {
+@@ -78,7 +78,10 @@
        return false;
      }
    }
@@ -56,10 +52,9 @@ index a5c97a0..21e8f53 100644
  
    D3D12_DESCRIPTOR_HEAP_DESC buffer_descriptor_heap_desc;
 diff --git a/src/graphics/d3d12/texture_cache.cpp b/src/graphics/d3d12/texture_cache.cpp
-index 2be0e8e..fb8357b 100644
 --- a/src/graphics/d3d12/texture_cache.cpp
 +++ b/src/graphics/d3d12/texture_cache.cpp
-@@ -1554,6 +1554,7 @@ std::unique_ptr<TextureCache::Texture> D3D12TextureCache::CreateTexture(TextureK
+@@ -1554,6 +1554,7 @@
                                               resource_state, nullptr, IID_PPV_ARGS(&resource)))) {
      return nullptr;
    }
@@ -67,7 +62,7 @@ index 2be0e8e..fb8357b 100644
    return std::unique_ptr<Texture>(new D3D12Texture(*this, key, resource.Get(), resource_state));
  }
  
-@@ -2015,6 +2016,7 @@ ID3D12Resource* D3D12TextureCache::D3D12Texture::GetOrCreate3DAs2DResource(
+@@ -2015,6 +2016,7 @@
      return nullptr;
    }
  
@@ -75,3 +70,26 @@ index 2be0e8e..fb8357b 100644
    TextureKey key_2d = key();
    key_2d.depth_or_array_size_minus_1 = 0;
    key_2d.mip_max_level = 0;
+diff --git a/src/graphics/d3d12/render_target_cache.cpp b/src/graphics/d3d12/render_target_cache.cpp
+--- a/src/graphics/d3d12/render_target_cache.cpp
++++ b/src/graphics/d3d12/render_target_cache.cpp
+@@ -202,6 +202,8 @@
+     path_ = Path::kHostRenderTargets;
+   }
+ 
++  REXGPU_INFO("D3D12 render target path: {}", path_ == Path::kPixelShaderInterlock ? "ROV" : "RTV");
++
+   // Create the buffer for reinterpreting EDRAM contents.
+   uint32_t edram_buffer_size =
+       xenos::kEdramSizeBytes * (draw_resolution_scale_x() * draw_resolution_scale_y());
+@@ -221,6 +223,10 @@
+     Shutdown();
+     return false;
+   }
++  edram_buffer_->SetName(L"Xenos EDRAM buffer");
++  REXGPU_INFO("EDRAM buffer GPU VA: 0x{:016X}-0x{:016X}",
++              edram_buffer_->GetGPUVirtualAddress(),
++              edram_buffer_->GetGPUVirtualAddress()+edram_buffer_->GetDesc().Width);
+   edram_buffer_->SetName(L"EDRAM Buffer");
+   edram_buffer_modification_status_ = EdramBufferModificationStatus::kUnmodified;
+ 
