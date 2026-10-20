@@ -1,0 +1,89 @@
+--- a/src/graphics/d3d12/command_processor.cpp
++++ b/src/graphics/d3d12/command_processor.cpp
+@@ -2623,6 +2623,22 @@
+   SetPrimitiveTopology(primitive_topology);
+   // Must not call anything that may change the primitive topology from now on!
+ 
++  auto mark_draw = [&](D3D12_GPU_VIRTUAL_ADDRESS index_address, uint32_t index_bytes) {
++    if (!rex::cvar::Query<bool>("d3d12_dred")) return;
++    const auto label = fmt::format(
++        "HW frame={} submission={} VS={:016X} PS={:016X} count={} index=0x{:X}/{} "
++        "cb_system=0x{:X} cb_vertex=0x{:X} cb_pixel=0x{:X} cb_fetch=0x{:X} "
++        "desc_vertex=0x{:X} desc_pixel=0x{:X}",
++        frame_current_, submission_current_, vertex_shader->ucode_data_hash(),
++        pixel_shader ? pixel_shader->ucode_data_hash() : 0,
++        primitive_processing_result.host_draw_vertex_count, index_address, index_bytes,
++        cbuffer_binding_system_.address, cbuffer_binding_float_vertex_.address,
++        cbuffer_binding_float_pixel_.address, cbuffer_binding_fetch_.address,
++        cbuffer_binding_descriptor_indices_vertex_.address,
++        cbuffer_binding_descriptor_indices_pixel_.address);
++    deferred_command_list_.InsertDebugMarker(label.c_str());
++  };
++
+   // Draw.
+   if (primitive_processing_result.index_buffer_type ==
+       PrimitiveProcessor::ProcessedIndexBufferType::kNone) {
+@@ -2634,6 +2650,7 @@
+     SubmitBarriers();
+     PROFILE_DRAW_CALL();
+     PROFILE_VERTICES(primitive_processing_result.host_draw_vertex_count);
++    mark_draw(0, 0);
+     deferred_command_list_.D3DDrawInstanced(primitive_processing_result.host_draw_vertex_count, 1,
+                                             0, 0);
+   } else {
+@@ -2693,6 +2710,7 @@
+     SubmitBarriers();
+     PROFILE_DRAW_CALL();
+     PROFILE_VERTICES(primitive_processing_result.host_draw_vertex_count);
++    mark_draw(index_buffer_view.BufferLocation, index_buffer_view.SizeInBytes);
+     deferred_command_list_.D3DDrawIndexedInstanced(
+         primitive_processing_result.host_draw_vertex_count, 1, 0, 0, 0);
+     if (scratch_index_buffer != nullptr) {
+@@ -3268,7 +3286,32 @@
+       uint32_t end = std::min(last + 1, node->BreadcrumbCount);
+       for (uint32_t i = start; i < end; i++) {
+         REXGPU_ERROR("  [{}] op type {}{}", i, static_cast<int>(node->pCommandHistory[i]),
+-                     i == last ? " <-- FAULT" : "");
++                     i == last ? " <-- first incomplete" : "");
++      }
++    }
++  }
++
++  Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedData1> dred1;
++  D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 contexts = {};
++  if (SUCCEEDED(dred.As(&dred1)) && SUCCEEDED(dred1->GetAutoBreadcrumbsOutput1(&contexts))) {
++    for (auto* node = contexts.pHeadAutoBreadcrumbNode; node; node = node->pNext) {
++      if (!node->pLastBreadcrumbValue || !node->pBreadcrumbContexts ||
++          *node->pLastBreadcrumbValue >= node->BreadcrumbCount) continue;
++      const uint32_t last = *node->pLastBreadcrumbValue;
++      uint32_t nearest = 0;
++      for (uint32_t i = 0; i < node->BreadcrumbContextsCount; ++i) {
++        const auto& context = node->pBreadcrumbContexts[i];
++        if (context.BreadcrumbIndex <= last) nearest = std::max(nearest, context.BreadcrumbIndex);
++      }
++      unsigned logged = 0;
++      for (uint32_t i = 0; i < node->BreadcrumbContextsCount && logged < 16; ++i) {
++        const auto& context = node->pBreadcrumbContexts[i];
++        if (!context.pContextString || context.BreadcrumbIndex < (nearest > 16 ? nearest - 16 : 0) ||
++            uint64_t(context.BreadcrumbIndex) > uint64_t(last) + 8) continue;
++        char utf8[2048] = {};
++        WideCharToMultiByte(CP_UTF8, 0, context.pContextString, -1, utf8, sizeof(utf8), nullptr, nullptr);
++        REXGPU_ERROR("DRED draw context [{}], completed={}: {}", context.BreadcrumbIndex, last, utf8);
++        ++logged;
+       }
+     }
+   }
+--- a/src/graphics/d3d12/graphics_system.cpp
++++ b/src/graphics/d3d12/graphics_system.cpp
+@@ -103,6 +103,11 @@
+     if (SUCCEEDED(result)) {
+       settings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+       settings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
++      Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> context_settings;
++      if (SUCCEEDED(settings.As(&context_settings))) {
++        context_settings->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
++        REXGPU_INFO("D3D12 DRED draw contexts enabled");
++      }
+       REXGPU_INFO("D3D12 DRED enabled independently of validation");
+     } else {
+       REXGPU_WARN("D3D12 DRED settings unavailable: HRESULT 0x{:08X}", unsigned(result));

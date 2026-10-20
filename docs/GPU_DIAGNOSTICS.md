@@ -144,3 +144,20 @@ before device creation, independently of CPU/GPU validation. This restores
 crash evidence without enabling the slow shader-access instrumentation.
 Both options are recorded by the playtest launcher. Stability of the one-frame
 comparison remains unverified until tested in a match.
+
+## Draw context capture
+
+The one-frame comparison also failed with DEVICE_HUNG. The session ran for
+about seven minutes in total; the log alone does not establish a stability
+improvement across equivalent matches. DRED reported a GPU page fault at
+`0x0000000343500000`, without matching live or freed allocations. Its first
+incomplete recorded operation was an indexed draw. A breadcrumb identifies
+nearby work and does not prove which draw or resource caused the fault.
+
+Apply `rexglue-dred-draw-context.patch` after the frame-overlap patch. When DRED
+is selected, it enables breadcrumb contexts before device creation and records
+shader hashes, index buffer ranges and bound constant-buffer addresses in draw
+markers. Crash output includes nearby markers from incomplete command lists.
+Normal gameplay does not emit these markers into the text log. This is an
+instrumented comparison, not a crash fix. Shader validation stays disabled.
+See [Microsoft's DRED documentation](https://learn.microsoft.com/en-us/windows/win32/direct3d12/use-dred).
