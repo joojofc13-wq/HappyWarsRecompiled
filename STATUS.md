@@ -1,7 +1,7 @@
 # Project status
 
 **The TU46 development port reaches Game Home, the tutorial and Skirmish.**
-Short gameplay sessions have been confirmed by interactive testing. A full match
+Longer gameplay sessions have been reported with the one-frame D3D12 queue. A full match
 has not been completed reliably. The latest blocker is a D3D12 `DEVICE_HUNG`
 with a GPU page fault on a Radeon RX 6650 XT. The Marketplace warning remains.
 
@@ -25,7 +25,7 @@ addresses and boundary declarations. The Windows builder completed a new staged 
 | Marketplace | Warning persists; a valid local catalog protocol remains unfinished |
 | Tickets and Premium | Local ticket hooks and permanent Premium policy implemented; ticket spending and Premium reward/UI effects need validation |
 | Maps and modes | Full coverage, match completion and rewards remain unverified |
-| GPU stability | Bindless-off and committed shared memory trials both failed; allocation-name diagnostics and fence correction did not eliminate the fault; ROV trial running |
+| GPU stability | Bindless-off and committed shared memory trials both failed; submission guards and a one-frame queue are included; longer sessions reported, GPU page fault still reproducible |
 | Frame pacing | Original 30 FPS pacing restored after instability with experimental 60 FPS |
 | Build updates | Existing standalone runtime updates preserve profiles and game files, with backups and rollback tests |
 | Distribution | Windows builder and public sources; no playable game binary or assets |
@@ -38,8 +38,7 @@ statistics enumeration and local ticket accounting. Python checks cover tool
 integrity, archive containment, playtest grouping
 and adapter-pattern recognition. These checks do not establish stable gameplay.
 
-The current GPU trial changes resource allocation without modifying Windows
-settings. Logs remain local and retain per-run executable hashes and selected
+The current D3D12 build limits queued frames without modifying Windows settings. Logs remain local and retain per-run executable hashes and selected
 GPU settings. See [GPU diagnostics](docs/GPU_DIAGNOSTICS.md) and
 [playtesting](docs/PLAYTESTING.md).
 

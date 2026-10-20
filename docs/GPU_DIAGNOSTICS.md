@@ -134,10 +134,10 @@ fix for the original GPU hang. DRED was not enabled in that session because
 validation was disabled, so no allocation or breadcrumb evidence was captured.
 
 `rexglue-frame-overlap-diagnostics.patch` applies after the lifetime patch. It
-adds an optional `d3d12_max_frames_in_flight` setting (1 to 3, default 3). The
+adds an optional `d3d12_max_frames_in_flight` setting (1 to 3, release default 1). The
 comparison build uses 1 to wait for the preceding frame before reusing frame
 resources. This isolates overlap without changing the guest's 30 FPS timing.
-The default preserves the SDK's existing frame queue.
+The SDK originally queued up to three frames; this release defaults to one.
 
 The separate `d3d12_dred` option enables breadcrumbs and page fault tracking
 before device creation, independently of CPU/GPU validation. This restores
@@ -161,3 +161,16 @@ markers. Crash output includes nearby markers from incomplete command lists.
 Normal gameplay does not emit these markers into the text log. This is an
 instrumented comparison, not a crash fix. Shader validation stays disabled.
 See [Microsoft's DRED documentation](https://learn.microsoft.com/en-us/windows/win32/direct3d12/use-dred).
+
+## Published GPU plugin
+
+Build the matching D3D12 plugin with `py scripts/build_d3d12_gpu.py --jobs 2`
+after configuring the pinned SDK source in local tool settings. The script
+checks the SDK revision and reconstructs the full patch stack before changing
+pristine files; conflicting local graphics edits cause an error.
+
+The Windows release builder bundles this plugin separately from its project
+sources. It verifies the DLL checksum, SDK revision and every patch checksum
+before installing it into a new build or updating an existing build. Original
+game files and saves remain supplied by the owner and preserved during updates.
+Vulkan remains experimental and is not selected by the release.

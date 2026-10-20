@@ -5,7 +5,7 @@
  REXCVAR_DEFINE_BOOL(d3d12_bindless, true, "GPU/D3D12", "Use bindless resources where available")
      .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
 +
-+REXCVAR_DEFINE_INT32(d3d12_max_frames_in_flight, 3, "GPU/D3D12",
++REXCVAR_DEFINE_INT32(d3d12_max_frames_in_flight, 1, "GPU/D3D12",
 +                    "Maximum queued guest frames (1 to 3); lower values isolate frame overlap")
 +    .lifecycle(rex::cvar::Lifecycle::kInitOnly);
  

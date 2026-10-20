@@ -80,6 +80,35 @@ def check_replaceable(paths):
             kernel.CloseHandle(handle)
 
 
+def apply_gpu_override(port, payload):
+    """Verify the bundled, patched SDK plugin before staging a public build."""
+    port, payload = Path(port), Path(payload)
+    manifest_path = payload/'gpu-build-info.json'
+    plugin = payload/'rexgpu-xenos.dll'
+    if not manifest_path.is_file() or not plugin.is_file():
+        raise RuntimeError('Incomplete GPU runtime payload')
+    info = json.loads(manifest_path.read_text())
+    locked = json.loads((port/'config/upstream-lock.json').read_text())['sdk']['commit']
+    if info.get('source_revision') != locked or info.get('backend') != 'd3d12':
+        raise RuntimeError('GPU plugin does not match the pinned D3D12 SDK')
+    if hashlib.sha256(plugin.read_bytes()).hexdigest() != info.get('plugin_sha256'):
+        raise RuntimeError('GPU plugin checksum mismatch')
+    from build_d3d12_gpu import PATCH_NAMES
+    if set(info.get('patches', {})) != set(PATCH_NAMES):
+        raise RuntimeError('GPU plugin patch set is incomplete')
+    for name, digest in info['patches'].items():
+        if hashlib.sha256((port/'patches'/name).read_bytes()).hexdigest() != digest:
+            raise RuntimeError('GPU plugin source patch mismatch: '+name)
+    native = port/'build/game'
+    if not native.is_dir():
+        raise RuntimeError('Build the native executable before applying its GPU plugin')
+    shutil.copy2(plugin, native/'rexgpu-xenos.dll')
+    shutil.copy2(manifest_path, native/'gpu-build-info.json')
+    if (payload/'licenses').is_dir():
+        shutil.copytree(payload/'licenses', native/'licenses', dirs_exist_ok=True)
+    return info
+
+
 def install_runtime(port, destination, update=False):
     """Stage first, back up old runtime files, and roll back replacement failures."""
     port = Path(port)
@@ -97,6 +126,8 @@ def install_runtime(port, destination, update=False):
                 if source.is_file() and (source.suffix.lower() == '.dll' or
                                         source.name in ('HappyWars.exe', *HELPERS)):
                     shutil.copy2(source, stage/source.name)
+            if (native/'licenses').is_dir():
+                shutil.copytree(native/'licenses', stage/'licenses')
             if (native/'fonts').is_dir():
                 shutil.copytree(native/'fonts', stage/'fonts')
             if not update:
@@ -107,6 +138,8 @@ def install_runtime(port, destination, update=False):
                              if p.is_file() and 'game' not in p.relative_to(stage).parts[:1])
             manifest = dict(format_version=1, source_revision=provenance.get('source_revision'),
                 files={name:hashlib.sha256((stage/name).read_bytes()).hexdigest() for name in managed})
+            if (native/'gpu-build-info.json').is_file():
+                manifest['gpu_runtime'] = json.loads((native/'gpu-build-info.json').read_text())
             (stage/'build-info.json').write_text(json.dumps(manifest, indent=2)+'\n', encoding='utf-8')
             files = sorted(p.relative_to(stage) for p in stage.rglob('*') if p.is_file())
             for relative in files:

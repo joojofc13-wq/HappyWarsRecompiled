@@ -88,3 +88,9 @@ The progress bar estimates overall progress from 0 to 100%. Native compilation
 updates from completed Ninja tasks. Tool setup and code generation advance at
 stage boundaries, so the percentage can remain unchanged while work continues.
 100% means the executable and runtime files are ready.
+
+The current prerelease includes the patched D3D12 GPU plugin with a one-frame
+queue. Both new builds and **Update existing build** receive that plugin after
+compilation. Its checksum and patch provenance are checked before installation.
+Updates retain game content and profiles and back up replaced runtime files.
+GPU crashes remain possible; this is not a stable release.

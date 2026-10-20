@@ -104,5 +104,32 @@ class RuntimeUpdateTests(unittest.TestCase):
         self.assertEqual(self.snapshot(), before)
 
 
+class GPUOverrideTests(unittest.TestCase):
+    def test_verified_plugin_stages_and_corruption_preserves_the_existing_plugin(self):
+        from build_d3d12_gpu import PATCH_NAMES
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder); port=root/'port'; payload=root/'payload'
+            (port/'build/game').mkdir(parents=True); (port/'patches').mkdir(); (port/'config').mkdir()
+            payload.mkdir(); (payload/'rexgpu-xenos.dll').write_bytes(b'verified GPU plugin')
+            (payload/'licenses').mkdir(); (payload/'licenses/SDK.txt').write_text('SDK license')
+            (port/'config/upstream-lock.json').write_text(json.dumps({'sdk':{'commit':'pinned'}}))
+            patches={}
+            for name in PATCH_NAMES:
+                data=name.encode(); (port/'patches'/name).write_bytes(data)
+                patches[name]=hashlib.sha256(data).hexdigest()
+            info=dict(source_revision='pinned',backend='d3d12',patches=patches,
+                plugin_sha256=hashlib.sha256((payload/'rexgpu-xenos.dll').read_bytes()).hexdigest())
+            (payload/'gpu-build-info.json').write_text(json.dumps(info))
+            distribution.apply_gpu_override(port,payload)
+            self.assertEqual((port/'build/game/rexgpu-xenos.dll').read_bytes(),b'verified GPU plugin')
+            self.assertEqual((port/'build/game/licenses/SDK.txt').read_text(),'SDK license')
+            (payload/'rexgpu-xenos.dll').write_bytes(b'corrupt')
+            with self.assertRaisesRegex(RuntimeError,'checksum'): distribution.apply_gpu_override(port,payload)
+            self.assertEqual((port/'build/game/rexgpu-xenos.dll').read_bytes(),b'verified GPU plugin')
+            (payload/'rexgpu-xenos.dll').write_bytes(b'verified GPU plugin')
+            (port/'patches'/PATCH_NAMES[0]).write_bytes(b'wrong patch')
+            with self.assertRaisesRegex(RuntimeError,'source patch'): distribution.apply_gpu_override(port,payload)
+
+
 if __name__ == '__main__':
     unittest.main()

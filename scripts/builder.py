@@ -12,7 +12,7 @@ import threading
 import tempfile
 import zipfile
 from build import environment as build_environment
-from runtime_distribution import install_runtime, validate_destination, check_replaceable, REQUIRED
+from runtime_distribution import install_runtime, validate_destination, check_replaceable, REQUIRED, apply_gpu_override
 
 ROOT = Path(__file__).resolve().parents[1]
 TU46_SHA = '14e0474a881bad5ef32bdf663651a8fb564bfd63fc23729aa50556739354e917'
@@ -74,6 +74,9 @@ def prepare_sources(destination):
 
 
 def stage_runtime(port, destination, update=False):
+    payload = Path(getattr(sys, '_MEIPASS', ROOT))/'runtime-overrides'
+    if payload.is_dir():
+        apply_gpu_override(port, payload)
     return install_runtime(port, destination, update)
 
 
@@ -291,7 +294,8 @@ def main():
         report = {'title':window.title(),'theme':style.theme_use(),
             'width':window.winfo_reqwidth(),'height':window.winfo_reqheight(),'inputs':list(fields),
             'update_supported':True,'progress_maximum':float(bar['maximum']),'progress_mode':str(bar['mode']),
-            'bundled_sources':(Path(getattr(sys,'_MEIPASS',ROOT))/'source.zip').is_file()}
+            'bundled_sources':(Path(getattr(sys,'_MEIPASS',ROOT))/'source.zip').is_file(),
+            'bundled_gpu_runtime':(Path(getattr(sys,'_MEIPASS',ROOT))/'runtime-overrides/gpu-build-info.json').is_file()}
         output=Path(sys.argv[sys.argv.index('--self-test-report')+1])
         output.write_text(json.dumps(report,indent=2),encoding='utf-8')
         window.destroy()
