@@ -105,3 +105,23 @@ flushing the logs and aborting. Breadcrumbs with zero completed operations are
 included because the first operation may be the one that failed. Apply this
 patch after the preceding three patches. This closes a diagnostic gap and does
 not fix the device loss itself.
+
+## Submission resource lifetime
+
+The personal test build is back on D3D12 RTV with original 30 FPS pacing.
+CPU and GPU validation are disabled for gameplay; DRED logging is retained.
+The Vulkan experiment did not render the match scene correctly.
+
+Apply `rexglue-submission-lifetime.patch` after the four D3D12 patches above.
+It prevents a failed frame-fence wait from retiring resources still referenced
+by the GPU. It also handles the device-removal fence sentinel without treating
+it as completion, checks allocator/list reset and list close results, and only
+advances the submission number after a successful queue signal. Failed OS waits
+now stop with an explicit error instead of continuing with unsafe resource reuse.
+
+`py scripts/test_submission_lifetime.py` compiles the actual patched fence-read
+and frame-admission blocks with injected pending, completed and removed-device
+states. The diagnostic plugin builds successfully and the regression passes.
+These checks cover error handling, not the original GPU fault: sustained match
+stability and performance still require a gameplay test. The prior DEVICE_HUNG
+page fault remains unresolved until that test provides evidence.
