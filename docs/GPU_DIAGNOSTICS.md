@@ -125,3 +125,22 @@ states. The diagnostic plugin builds successfully and the regression passes.
 These checks cover error handling, not the original GPU fault: sustained match
 stability and performance still require a gameplay test. The prior DEVICE_HUNG
 page fault remains unresolved until that test provides evidence.
+
+## Frame overlap comparison
+
+The RTV lifetime-guard trial still failed during a match with DEVICE_HUNG.
+It held approximately 30 FPS before the failure. The guard is not a verified
+fix for the original GPU hang. DRED was not enabled in that session because
+validation was disabled, so no allocation or breadcrumb evidence was captured.
+
+`rexglue-frame-overlap-diagnostics.patch` applies after the lifetime patch. It
+adds an optional `d3d12_max_frames_in_flight` setting (1 to 3, default 3). The
+comparison build uses 1 to wait for the preceding frame before reusing frame
+resources. This isolates overlap without changing the guest's 30 FPS timing.
+The default preserves the SDK's existing frame queue.
+
+The separate `d3d12_dred` option enables breadcrumbs and page fault tracking
+before device creation, independently of CPU/GPU validation. This restores
+crash evidence without enabling the slow shader-access instrumentation.
+Both options are recorded by the playtest launcher. Stability of the one-frame
+comparison remains unverified until tested in a match.

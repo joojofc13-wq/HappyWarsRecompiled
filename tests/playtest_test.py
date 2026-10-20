@@ -71,6 +71,25 @@ class PlaytestTests(unittest.TestCase):
                 session=playtest.launch('bad config',root)
                 launch.assert_not_called()
             self.assertEqual(session['state'],'launch_failed')
+    def test_d3d12_queue_limit_and_dred_are_recorded(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);(root/'game').mkdir();(root/'private').mkdir()
+            (root/'game/Default.xex').touch();(root/'HappyWars.exe').write_bytes(b'fixture')
+            config=root/'private/gpu-settings.json'
+            config.write_text(json.dumps({'d3d12_max_frames_in_flight':1,'d3d12_dred':True}))
+            def process(command,**kwargs):
+                self.assertIn('--d3d12_max_frames_in_flight=1',command)
+                self.assertIn('--d3d12_dred=true',command)
+                result=unittest.mock.Mock(pid=42);result.wait.return_value=0;return result
+            with patch.object(playtest.subprocess,'Popen',side_effect=process):
+                session=playtest.launch('single queued frame',root)
+            self.assertEqual(session['gpu_settings']['d3d12_max_frames_in_flight'],1)
+            for bad in (True,0,4,'1'):
+                config.write_text(json.dumps({'d3d12_max_frames_in_flight':bad}))
+                with patch.object(playtest.subprocess,'Popen') as launch:
+                    self.assertEqual(playtest.launch('invalid',root)['state'],'launch_failed')
+                    launch.assert_not_called()
+
     def test_exit_without_missing_function_is_not_classified_as_one(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

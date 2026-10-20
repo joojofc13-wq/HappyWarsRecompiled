@@ -13,10 +13,13 @@ def main():
     read_start = source.index("  auto read_completed = [this]()")
     read_end = source.index("  if (!read_completed()) return;", read_start)
     read_body = source[read_start:read_end] + "\nreturn read_completed();"
-    gate_start = source.index("  const uint64_t required_submission =")
+    gate_start = source.index("  const uint64_t queued_frames =")
     gate_end = source.index("  if (is_opening_frame) {", gate_start)
     gate_body = source[gate_start:gate_end] + "\nreturn true;"
     harness = r"""
+#include <algorithm>
+#define REXCVAR_GET(name) max_frames
+int max_frames=3;
 #define CHECK(value) do { if (!(value)) return __LINE__; } while (false)
 #include <cstdint>
 struct Device { int GetDeviceRemovedReason() { return -1; } };
@@ -55,6 +58,16 @@ int main() {
   CHECK(q.begin(true));
   q.fence.value=10;
   CHECK(q.read() && q.begin(true));
+  q.closed_frame_submissions_[2]=11;
+  max_frames=1;
+  CHECK(!q.begin(true) && q.waited==11);
+  q.fence.value=11;
+  CHECK(q.read() && q.begin(true));
+  q.frame_current_=1;
+  q.closed_frame_submissions_[0]=0;
+  CHECK(q.begin(true) && q.waited==0);
+  max_frames=3;
+  CHECK(q.begin(true) && q.waited==0);
 }
 """
     harness = harness.replace("READ_BODY", read_body).replace("GATE_BODY", gate_body)

@@ -95,7 +95,7 @@ def launch(label='', root=ROOT, profile=None, update=None):
             gpu = json.loads(gpu_path.read_text(encoding='utf-8'))
             selected = {}
             for key in ('d3d12_bindless', 'd3d12_debug', 'd3d12_tiled_shared_memory',
-                        'd3d12_gpu_based_validation', 'vulkan_validation_enabled',
+                        'd3d12_gpu_based_validation', 'd3d12_dred', 'vulkan_validation_enabled',
                         'vulkan_dynamic_rendering', 'vulkan_render_diagnostics'):
                 if key not in gpu:
                     continue
@@ -109,6 +109,12 @@ def launch(label='', root=ROOT, profile=None, update=None):
                     raise ValueError('gpu must be any, d3d12 or vulkan')
                 command.append('--gpu='+backend)
                 selected['gpu']=backend
+            if 'd3d12_max_frames_in_flight' in gpu:
+                frames=gpu['d3d12_max_frames_in_flight']
+                if type(frames) is not int or not 1 <= frames <= 3:
+                    raise ValueError('d3d12_max_frames_in_flight must be an integer between 1 and 3')
+                command.append('--d3d12_max_frames_in_flight='+str(frames))
+                selected['d3d12_max_frames_in_flight']=frames
             if 'vulkan_device' in gpu:
                 device=gpu['vulkan_device']
                 if type(device) is not int or not -1 <= device <= 31:

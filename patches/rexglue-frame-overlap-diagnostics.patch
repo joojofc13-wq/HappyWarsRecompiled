@@ -1,0 +1,70 @@
+--- a/src/graphics/d3d12/command_processor.cpp
++++ b/src/graphics/d3d12/command_processor.cpp
+@@ -34,6 +34,10 @@
+ 
+ REXCVAR_DEFINE_BOOL(d3d12_bindless, true, "GPU/D3D12", "Use bindless resources where available")
+     .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
++
++REXCVAR_DEFINE_INT32(d3d12_max_frames_in_flight, 3, "GPU/D3D12",
++                    "Maximum queued guest frames (1 to 3); lower values isolate frame overlap")
++    .lifecycle(rex::cvar::Lifecycle::kInitOnly);
+ 
+ REXCVAR_DEFINE_BOOL(d3d12_readback_memexport, false, "GPU/D3D12",
+                     "Read data written by memory export in shaders on the CPU")
+@@ -3326,8 +3330,12 @@
+   // Check the fence - needed for all kinds of submissions (to reclaim transient
+   // resources early) and specifically for frames (not to queue too many), and
+   // await the availability of the current frame.
++  const uint64_t queued_frames = std::clamp<int32_t>(
++      REXCVAR_GET(d3d12_max_frames_in_flight), 1, kQueueFrames);
+   const uint64_t required_submission =
+-      is_opening_frame ? closed_frame_submissions_[frame_current_ % kQueueFrames] : 0;
++      is_opening_frame && frame_current_ >= queued_frames
++          ? closed_frame_submissions_[(frame_current_ - queued_frames) % kQueueFrames]
++          : 0;
+   CheckSubmissionFence(required_submission);
+   if (device_removed_ || submission_completed_ < required_submission) {
+     // A failed wait must not retire a frame whose GPU work is still pending.
+--- a/src/graphics/d3d12/graphics_system.cpp
++++ b/src/graphics/d3d12/graphics_system.cpp
+@@ -26,6 +26,10 @@
+ 
+ REXCVAR_DEFINE_BOOL(d3d12_gpu_based_validation, false, "GPU/D3D12",
+                    "Instrument GPU shader accesses for diagnosis (very slow)")
++    .lifecycle(rex::cvar::Lifecycle::kInitOnly);
++
++REXCVAR_DEFINE_BOOL(d3d12_dred, false, "GPU/D3D12",
++                   "Collect device-removal breadcrumbs without enabling shader validation")
+     .lifecycle(rex::cvar::Lifecycle::kInitOnly);
+ 
+ namespace rex::graphics::d3d12 {
+@@ -89,6 +93,21 @@
+ }
+ 
+ void D3D12GraphicsSystem::CreateProvider(bool /*with_presentation*/) {
++  HMODULE dred_library = nullptr;
++  if (REXCVAR_GET(d3d12_dred)) {
++    dred_library = LoadLibraryW(L"D3D12.dll");
++    auto get_debug = dred_library ? reinterpret_cast<PFN_D3D12_GET_DEBUG_INTERFACE>(
++        GetProcAddress(dred_library, "D3D12GetDebugInterface")) : nullptr;
++    Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedDataSettings> settings;
++    const HRESULT result = get_debug ? get_debug(IID_PPV_ARGS(&settings)) : E_NOINTERFACE;
++    if (SUCCEEDED(result)) {
++      settings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
++      settings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
++      REXGPU_INFO("D3D12 DRED enabled independently of validation");
++    } else {
++      REXGPU_WARN("D3D12 DRED settings unavailable: HRESULT 0x{:08X}", unsigned(result));
++    }
++  }
+   HMODULE validation_library = nullptr;
+   if (REXCVAR_GET(d3d12_gpu_based_validation)) {
+     // Enable before the first device, including the provider's adapter probes.
+@@ -116,6 +135,7 @@
+   provider_ = rex::ui::d3d12::D3D12Provider::Create();
+   // The provider now owns a runtime reference, preserving the debug settings.
+   if (validation_library) FreeLibrary(validation_library);
++  if (dred_library) FreeLibrary(dred_library);
+   if (provider_ && (REXCVAR_GET(d3d12_gpu_based_validation) ||
+                     rex::cvar::Query<bool>("d3d12_debug"))) {
+     auto* device = static_cast<rex::ui::d3d12::D3D12Provider*>(provider_.get())->GetDevice();
