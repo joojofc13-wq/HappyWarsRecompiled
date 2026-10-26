@@ -26,7 +26,6 @@ addresses and boundary declarations. The Windows builder completed a new staged 
 | Tickets and Premium | Local ticket hooks and permanent Premium policy implemented; ticket spending and Premium reward/UI effects need validation |
 | Maps and modes | Full coverage, match completion and rewards remain unverified |
 | GPU stability | Bindless-off and committed shared memory trials both failed; submission guards and a one-frame queue are included; longer sessions reported, GPU page fault still reproducible |
-| Frame pacing | Original 30 FPS pacing restored after instability with experimental 60 FPS |
 | Build updates | Existing standalone runtime updates preserve profiles and game files, with backups and rollback tests |
 | Distribution | Windows builder and public sources; no playable game binary or assets |
 
